@@ -2013,7 +2013,6 @@
 
 
 
-
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
@@ -2037,27 +2036,29 @@ function GateKeeper() {
   const [checkedInTrucks, setCheckedInTrucks] = useState([]);
 
   useEffect(() => {
-    axios.get(`${API_URL}/api/plants`)
-      .then(res => {
-        const allowed = (localStorage.getItem('allowedPlants') || '')
-          .split(',')
-          .map(id => id.trim())
-          .filter(Boolean);
-        const filtered = res.data.filter(plant => allowed.includes(String(plant.PlantID)));
-        setPlantList(filtered);
-      })
-      .catch(err => console.error('Error fetching plants:', err));
+    const username = localStorage.getItem('username');
+    if (!username) {
+      toast.error("User not logged in.");
+      return;
+    }
+
+    axios.get(`${API_URL}/api/user-allowed-plants`, {
+      params: { username }
+    })
+    .then(res => {
+      setPlantList(res.data); // Expects array of { plantid, plantname }
+    })
+    .catch(err => {
+      console.error('Error fetching allowed plants:', err);
+      toast.error("Failed to load allowed plants.");
+    });
   }, []);
 
   useEffect(() => {
     if (selectedPlant && plantList.length > 0) {
-      const selectedPlantObj = plantList.find(p => String(p.PlantID) === String(selectedPlant));
-      const plantName = selectedPlantObj ? selectedPlantObj.PlantName : '';
-      if (!plantName) {
-        setTruckNumbers([]);
-        setCheckedInTrucks([]);
-        return;
-      }
+      const selectedPlantObj = plantList.find(p => String(p.plantid) === String(selectedPlant));
+      const plantName = selectedPlantObj?.plantname || '';
+      if (!plantName) return;
 
       axios.get(`${API_URL}/api/trucks?plantName=${encodeURIComponent(plantName)}`)
         .then(res => setTruckNumbers(res.data))
@@ -2089,8 +2090,8 @@ function GateKeeper() {
   const handleTruckSelect = async (truckNo) => {
     setFormData(prev => ({ ...prev, truckNo }));
 
-    const selectedPlantObj = plantList.find(p => String(p.PlantID) === String(selectedPlant));
-    const plantName = selectedPlantObj ? selectedPlantObj.PlantName : '';
+    const selectedPlantObj = plantList.find(p => String(p.plantid) === String(selectedPlant));
+    const plantName = selectedPlantObj?.plantname || '';
 
     try {
       const resRemarks = await axios.get(`${API_URL}/api/fetch-remarks`, {
@@ -2107,7 +2108,7 @@ function GateKeeper() {
         quantity: resQty.data.quantity || ''
       }));
     } catch (err) {
-      console.error('Error fetching remarks or quantity:', err);
+      console.error('Error fetching remarks/qty:', err);
       setFormData(prev => ({
         ...prev,
         remarks: 'No remarks available or error fetching remarks.',
@@ -2138,8 +2139,8 @@ function GateKeeper() {
       return;
     }
 
-    const selectedPlantObj = plantList.find(p => String(p.PlantID) === String(selectedPlant));
-    const plantName = selectedPlantObj ? selectedPlantObj.PlantName : '';
+    const selectedPlantObj = plantList.find(p => String(p.plantid) === String(selectedPlant));
+    const plantName = selectedPlantObj?.plantname || '';
 
     try {
       const response = await axios.post(`${API_URL}/api/update-truck-status`, {
@@ -2156,10 +2157,8 @@ function GateKeeper() {
         if (type === 'Check In') {
           setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo }]);
         }
-
         toast.success(response.data.message);
         setFormData(prev => ({ ...prev, truckNo: '' }));
-        localStorage.setItem('allowedPlants', response.data.allowedPlants);
       } else {
         toast.error(response.data.message || 'Failed to update status');
       }
@@ -2172,7 +2171,7 @@ function GateKeeper() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 p-6">
       <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left Panel - Truck List */}
+        {/* Left Panel */}
         <div className="col-span-1 space-y-6">
           <select
             value={selectedPlant}
@@ -2181,7 +2180,9 @@ function GateKeeper() {
           >
             <option value="">Select Plant</option>
             {plantList.map((plant) => (
-              <option key={plant.PlantID} value={plant.PlantID}>{plant.PlantName}</option>
+              <option key={plant.plantid} value={plant.plantid}>
+                {plant.plantname}
+              </option>
             ))}
           </select>
 
@@ -2204,7 +2205,7 @@ function GateKeeper() {
           </div>
         </div>
 
-        {/* Center Panel - Form */}
+        {/* Center Panel */}
         <div className="col-span-1 space-y-6">
           <div className="relative w-full">
             <img
@@ -2274,7 +2275,7 @@ function GateKeeper() {
           </div>
         </div>
 
-        {/* Right Panel - Checked In */}
+        {/* Right Panel */}
         <div className="col-span-1">
           <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 h-full overflow-y-auto shadow-inner">
             <h3 className="text-lg font-bold text-green-800 mb-4">Checked In Trucks</h3>
