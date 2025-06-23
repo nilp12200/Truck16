@@ -2018,9 +2018,9 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import truck from './assets/truck.jpg';
 
 const API_URL = import.meta.env.VITE_API_URL;
+const truck = "https://pngimg.com/uploads/truck/truck_PNG16234.png";
 
 function GateKeeper() {
   const [formData, setFormData] = useState({
@@ -2039,7 +2039,7 @@ function GateKeeper() {
   useEffect(() => {
     axios.get(`${API_URL}/api/plants`)
       .then(res => {
-        let allowed = (localStorage.getItem('allowedPlants') || '')
+        const allowed = (localStorage.getItem('allowedPlants') || '')
           .split(',')
           .map(id => id.trim())
           .filter(Boolean);
@@ -2177,7 +2177,7 @@ function GateKeeper() {
           <select
             value={selectedPlant}
             onChange={handlePlantChange}
-            className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            className="w-full border-2 border-gray-200 px-4 py-3 rounded-xl shadow-sm"
           >
             <option value="">Select Plant</option>
             {plantList.map((plant) => (
@@ -2309,4 +2309,3 @@ function GateKeeper() {
 }
 
 export default GateKeeper;
-
