@@ -2312,139 +2312,19 @@
 
 
 /////////////////////////////////////////////////////////////////////////////////
-
-
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Pencil, Trash2 } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL;
-
-export default function PlantMaster() {
-  const [formData, setFormData] = useState({
-    plantId: null,
-    plantName: '',
-    plantAddress: '',
-    contactPerson: '',
-    mobileNo: '',
-    remarks: ''
-  });
-
-  const [plantList, setPlantList] = useState([]);
-  const [selectedPlantId, setSelectedPlantId] = useState('');
-  const [showEditButton, setShowEditButton] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-
-  useEffect(() => {
-    fetchPlants();
-  }, []);
-
-  const fetchPlants = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/api/plants`);
-      setPlantList(res.data);
-    } catch (err) {
-      console.error('Error fetching plant list:', err);
-    }
-  };
-
-  const handlePlantSelect = (e) => {
-    const value = e.target.value;
-    const id = parseInt(value, 10);
-    if (isNaN(id)) {
-      setSelectedPlantId('');
-      setShowEditButton(false);
-      return;
-    }
-    setSelectedPlantId(id);
-    setShowEditButton(true);
-  };
-
-  const handleEditClick = async () => {
-    if (!selectedPlantId) return;
-    try {
-      const res = await axios.get(`${API_URL}/api/plantmaster/${selectedPlantId}`);
-      const data = res.data;
-      if (data && data.plantId) {
-        setFormData({
-          plantId: data.plantId,
-          plantName: data.plantName,
-          plantAddress: data.plantAddress,
-          contactPerson: data.contactPerson,
-          mobileNo: data.mobileNo,
-          remarks: data.remarks
-        });
-        setEditMode(true);
-      } else {
-        alert('❌ Invalid plant selected or no data found');
-      }
-    } catch (err) {
-      console.error('Error fetching plant:', err);
-      alert('❌ Error fetching plant data');
-    }
-  };
-
-  const handleDelete = async (plantId) => {
-    if (confirm('Are you sure you want to delete this plant?')) {
-      try {
-        await axios.delete(`${API_URL}/api/plant-master/${plantId}`);
-        alert('✅ Plant deleted successfully!');
-        fetchPlants();
-      } catch (err) {
-        console.error('Error deleting plant:', err);
-        alert('❌ Failed to delete plant');
-      }
-    }
-  };
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleBack = () => {
-    setFormData({
-      plantId: null,
-      plantName: '',
-      plantAddress: '',
-      contactPerson: '',
-      mobileNo: '',
-      remarks: ''
-    });
-    setEditMode(false);
-    setSelectedPlantId('');
-    setShowEditButton(false);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (formData.plantId) {
-        await axios.put(`${API_URL}/api/plant-master/${formData.plantId}`, formData);
-        alert('✅ Plant updated successfully!');
-      } else {
-        await axios.post(`${API_URL}/api/plant-master`, formData);
-        alert('✅ Plant saved successfully!');
-      }
-      fetchPlants();
-      handleBack();
-    } catch (err) {
-      alert('❌ Error saving/updating plant');
-      console.error(err);
-    }
-  };
-
+// ... existing code ...
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-xl p-6">
-        <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">Plant Master Admin</h2>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6 flex items-center justify-center">
+      <div className="max-w-6xl w-full mx-auto bg-white rounded-3xl shadow-2xl p-8 transition-transform duration-300 hover:scale-[1.01] hover:shadow-3xl border border-blue-100">
+        <h2 className="text-4xl font-extrabold mb-8 text-center text-blue-700 tracking-tight drop-shadow-sm">Plant Master Admin</h2>
 
         {!editMode && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Plant to Edit</label>
+          <div className="mb-8">
+            <label className="block text-base font-semibold text-gray-700 mb-2">Select Plant to Edit</label>
             <select
               value={selectedPlantId}
               onChange={handlePlantSelect}
-              className="block w-full p-2 border rounded-lg border-gray-300 shadow-sm"
+              className="block w-full p-3 border rounded-xl border-blue-200 shadow focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
             >
               <option value="">-- Select --</option>
               {plantList.map((plant) => (
@@ -2457,7 +2337,7 @@ export default function PlantMaster() {
             {showEditButton && (
               <button
                 onClick={handleEditClick}
-                className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 w-full"
+                className="mt-4 px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white font-semibold rounded-xl shadow hover:from-yellow-500 hover:to-yellow-600 w-full transition-transform hover:scale-105"
               >
                 ✏️ Edit Selected Plant
               </button>
@@ -2465,7 +2345,7 @@ export default function PlantMaster() {
 
             <button
               onClick={() => setEditMode(true)}
-              className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 w-full"
+              className="mt-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-xl shadow hover:from-green-600 hover:to-green-700 w-full transition-transform hover:scale-105"
             >
               ➕ Add New Plant
             </button>
@@ -2473,41 +2353,43 @@ export default function PlantMaster() {
         )}
 
         {!editMode && (
-          <div className="overflow-auto">
-            <table className="min-w-full border text-center">
-              <thead className="bg-blue-700 text-white">
+          <div className="overflow-auto rounded-xl border border-blue-100 shadow-inner">
+            <table className="min-w-full border text-center text-base">
+              <thead className="bg-blue-700 text-white sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Name</th>
-                  <th className="px-4 py-2">Address</th>
-                  <th className="px-4 py-2">Contact</th>
-                  <th className="px-4 py-2">Mobile</th>
-                  <th className="px-4 py-2">Remarks</th>
-                  <th className="px-4 py-2">Actions</th>
+                  <th className="px-4 py-3">ID</th>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Address</th>
+                  <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Mobile</th>
+                  <th className="px-4 py-3">Remarks</th>
+                  <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {plantList.map((plant) => (
-                  <tr key={plant.plantid || plant.plantId} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">{plant.plantid || plant.plantId}</td>
+                {plantList.map((plant, idx) => (
+                  <tr key={plant.plantid || plant.plantId} className={"border-b transition hover:bg-blue-50 " + (idx % 2 === 0 ? 'bg-white' : 'bg-blue-50/50') }>
+                    <td className="px-4 py-2 font-semibold text-blue-900">{plant.plantid || plant.plantId}</td>
                     <td className="px-4 py-2">{plant.plantname || plant.plantName}</td>
-                    <td className="px-4 py-2">{plant.plantaddress || plant.plantAddress}</td>
+                    <td className="px-4 py-2 text-left max-w-xs truncate">{plant.plantaddress || plant.plantAddress}</td>
                     <td className="px-4 py-2">{plant.contactperson || plant.contactPerson}</td>
                     <td className="px-4 py-2">{plant.mobileno || plant.mobileNo}</td>
                     <td className="px-4 py-2">{plant.remarks}</td>
-                    <td className="px-4 py-2 space-x-2">
+                    <td className="px-4 py-2 space-x-2 flex justify-center">
                       <button
                         onClick={() => {
                           setSelectedPlantId(plant.plantid || plant.plantId);
                           handleEditClick();
                         }}
-                        className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                        className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-2 py-1 rounded-lg shadow hover:from-yellow-500 hover:to-yellow-600 transition-transform hover:scale-110"
+                        title="Edit"
                       >
                         <Pencil size={16} />
                       </button>
                       <button
                         onClick={() => handleDelete(plant.plantid || plant.plantId)}
-                        className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                        className="bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-1 rounded-lg shadow hover:from-red-600 hover:to-red-700 transition-transform hover:scale-110"
+                        title="Delete"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -2520,64 +2402,65 @@ export default function PlantMaster() {
         )}
 
         {editMode && (
-          <form className="space-y-4 mt-6" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-2 gap-4">
+          <form className="space-y-6 mt-8" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium">Plant Name</label>
+                <label className="block text-base font-semibold mb-1">Plant Name</label>
                 <input
                   type="text"
                   name="plantName"
                   value={formData.plantName}
                   onChange={handleChange}
                   required
-                  className="w-full p-2 border rounded"
+                  className="w-full p-3 border border-blue-200 rounded-xl shadow focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium">Contact Person</label>
+                <label className="block text-base font-semibold mb-1">Contact Person</label>
                 <input
                   type="text"
                   name="contactPerson"
                   value={formData.contactPerson}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-3 border border-blue-200 rounded-xl shadow focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
                 />
               </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium">Address</label>
+              <div className="md:col-span-2">
+                <label className="block text-base font-semibold mb-1">Address</label>
                 <textarea
                   name="plantAddress"
                   value={formData.plantAddress}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-3 border border-blue-200 rounded-xl shadow focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+                  rows={2}
                 ></textarea>
               </div>
               <div>
-                <label className="block text-sm font-medium">Mobile No</label>
+                <label className="block text-base font-semibold mb-1">Mobile No</label>
                 <input
                   type="tel"
                   name="mobileNo"
                   value={formData.mobileNo}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-3 border border-blue-200 rounded-xl shadow focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium">Remarks</label>
+                <label className="block text-base font-semibold mb-1">Remarks</label>
                 <input
                   type="text"
                   name="remarks"
                   value={formData.remarks}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-3 border border-blue-200 rounded-xl shadow focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
                 />
               </div>
             </div>
-            <div className="flex justify-between">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <div className="flex flex-col md:flex-row justify-between gap-4 mt-6">
+              <button type="submit" className="bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow hover:from-blue-700 hover:to-blue-800 transition-transform hover:scale-105">
                 {formData.plantId ? 'Update' : 'Save'}
               </button>
-              <button type="button" onClick={handleBack} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+              <button type="button" onClick={handleBack} className="bg-gradient-to-r from-gray-400 to-gray-500 text-white font-semibold px-6 py-3 rounded-xl shadow hover:from-gray-500 hover:to-gray-600 transition-transform hover:scale-105">
                 Back
               </button>
             </div>
@@ -2586,4 +2469,4 @@ export default function PlantMaster() {
       </div>
     </div>
   );
-}
+// ... existing code ...
