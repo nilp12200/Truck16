@@ -2313,6 +2313,125 @@
 
 /////////////////////////////////////////////////////////////////////////////////
 // ... existing code ...
+  import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Pencil, Trash2 } from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+export default function PlantMaster() {
+  const [formData, setFormData] = useState({
+    plantId: null,
+    plantName: '',
+    plantAddress: '',
+    contactPerson: '',
+    mobileNo: '',
+    remarks: ''
+  });
+
+  const [plantList, setPlantList] = useState([]);
+  const [selectedPlantId, setSelectedPlantId] = useState('');
+  const [showEditButton, setShowEditButton] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+
+  useEffect(() => {
+    fetchPlants();
+  }, []);
+
+  const fetchPlants = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/plants`);
+      setPlantList(res.data);
+    } catch (err) {
+      console.error('Error fetching plant list:', err);
+    }
+  };
+
+  const handlePlantSelect = (e) => {
+    const value = e.target.value;
+    const id = parseInt(value, 10);
+    if (isNaN(id)) {
+      setSelectedPlantId('');
+      setShowEditButton(false);
+      return;
+    }
+    setSelectedPlantId(id);
+    setShowEditButton(true);
+  };
+
+  const handleEditClick = async () => {
+    if (!selectedPlantId) return;
+    try {
+      const res = await axios.get(`${API_URL}/api/plantmaster/${selectedPlantId}`);
+      const data = res.data;
+      if (data && data.plantId) {
+        setFormData({
+          plantId: data.plantId,
+          plantName: data.plantName,
+          plantAddress: data.plantAddress,
+          contactPerson: data.contactPerson,
+          mobileNo: data.mobileNo,
+          remarks: data.remarks
+        });
+        setEditMode(true);
+      } else {
+        alert('❌ Invalid plant selected or no data found');
+      }
+    } catch (err) {
+      console.error('Error fetching plant:', err);
+      alert('❌ Error fetching plant data');
+    }
+  };
+
+  const handleDelete = async (plantId) => {
+    if (confirm('Are you sure you want to delete this plant?')) {
+      try {
+        await axios.delete(`${API_URL}/api/plant-master/${plantId}`);
+        alert('✅ Plant deleted successfully!');
+        fetchPlants();
+      } catch (err) {
+        console.error('Error deleting plant:', err);
+        alert('❌ Failed to delete plant');
+      }
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleBack = () => {
+    setFormData({
+      plantId: null,
+      plantName: '',
+      plantAddress: '',
+      contactPerson: '',
+      mobileNo: '',
+      remarks: ''
+    });
+    setEditMode(false);
+    setSelectedPlantId('');
+    setShowEditButton(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (formData.plantId) {
+        await axios.put(`${API_URL}/api/plant-master/${formData.plantId}`, formData);
+        alert('✅ Plant updated successfully!');
+      } else {
+        await axios.post(`${API_URL}/api/plant-master`, formData);
+        alert('✅ Plant saved successfully!');
+      }
+      fetchPlants();
+      handleBack();
+    } catch (err) {
+      alert('❌ Error saving/updating plant');
+      console.error(err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6 flex items-center justify-center">
       <div className="max-w-6xl w-full mx-auto bg-white rounded-3xl shadow-2xl p-8 transition-transform duration-300 hover:scale-[1.01] hover:shadow-3xl border border-blue-100">
@@ -2469,4 +2588,4 @@
       </div>
     </div>
   );
-// ... existing code ...
+}
