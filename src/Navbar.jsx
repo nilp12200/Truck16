@@ -1322,7 +1322,7 @@ function Navbar() {
                   <NavLink to="/truck" routeKey="truck">
                     <span className="block hover:text-yellow-400">📝 Truck Transaction</span>
                   </NavLink>
-                  <NavLink to="/truckfind" routeKey="truck">
+                  <NavLink to="/truckfind" routeKey="truckfind">
                     <span className="block px-6 py-3 text-white hover:bg-yellow-400 hover:text-gray-900">
                       🚛 Truck Transaction Find
                     </span>
