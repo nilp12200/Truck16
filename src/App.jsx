@@ -57,7 +57,7 @@ import TruckTransaction from './TruckTransaction';
 import PlantMaster from './PlantMaster';
 import Reports from './Report';
 import UserMaster from './UserMaster';
-import TruckFind from './TruckFind.jsx';
+import TruckFind from './TruckFind';
 
 
 
