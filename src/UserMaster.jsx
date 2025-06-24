@@ -1447,6 +1447,13 @@ export default function UserMaster() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-white px-4">
       <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-xl">
+        <button
+          onClick={() => navigate('/home')}
+          className="absolute top-4 right-4 w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full flex items-center justify-center hover:from-red-600 hover:to-red-700 transform transition-all duration-300 hover:scale-110 shadow-lg"
+          title="Close"
+        >
+          ✕
+        </button>
         <h2 className="text-3xl font-bold text-center mb-6 text-blue-700 flex items-center justify-center gap-2">
           <span className="text-4xl">👤</span> User Master
         </h2>
