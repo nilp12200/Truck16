@@ -1124,7 +1124,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-// Use environment variable for API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 function Navbar() {
@@ -1144,17 +1143,15 @@ function Navbar() {
     window.location.href = "/";
   };
 
-  // Access map with all keys in lowercase
   const roleAccess = {
-    owner: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports'],
-    admin: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports'],
-    dispatch: ['truck'],
+    owner: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'truckfind'],
+    admin: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'truckfind'],
+    dispatch: ['truck', 'truckfind'],
     gatekeeper: ['gate'],
     report: ['reports'],
     loader: ['loader'],
   };
 
-  // Case insensitive access check
   const canAccess = (route) => {
     if (!userRole) return false;
     const roles = userRole.split(',').map(r => r.trim().toLowerCase());
@@ -1248,6 +1245,11 @@ function Navbar() {
                       🚛 Truck Transaction
                     </span>
                   </NavLink>
+                  <NavLink to="/truckfind" routeKey="truckfind">
+                    <span className="block px-6 py-3 text-white hover:bg-yellow-400 hover:text-gray-900">
+                      🔍 Truck Transaction Find
+                    </span>
+                  </NavLink>
                 </div>
               )}
             </div>
@@ -1323,9 +1325,7 @@ function Navbar() {
                     <span className="block hover:text-yellow-400">📝 Truck Transaction</span>
                   </NavLink>
                   <NavLink to="/truckfind" routeKey="truckfind">
-                    <span className="block px-6 py-3 text-white hover:bg-yellow-400 hover:text-gray-900">
-                      🚛 Truck Transaction Find
-                    </span>
+                    <span className="block hover:text-yellow-400">🔍 Truck Transaction Find</span>
                   </NavLink>
                 </div>
               )}
@@ -1357,4 +1357,3 @@ function Navbar() {
 }
 
 export default Navbar;
-
