@@ -2316,10 +2316,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Pencil, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function PlantMaster() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     plantId: null,
     plantName: '',
@@ -2434,7 +2436,16 @@ export default function PlantMaster() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6 flex items-center justify-center">
-      <div className="max-w-6xl w-full mx-auto bg-white rounded-3xl shadow-2xl p-8 transition-transform duration-300 hover:scale-[1.01] hover:shadow-3xl border border-blue-100">
+      <div className="max-w-6xl w-full mx-auto bg-white rounded-3xl shadow-2xl p-8 transition-transform duration-300 hover:scale-[1.01] hover:shadow-3xl border border-blue-100 relative">
+        {/* Close Button */}
+        <button
+          onClick={() => navigate('/home')}
+          className="absolute top-4 right-4 w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full flex items-center justify-center hover:from-red-600 hover:to-red-700 transform transition-all duration-300 hover:scale-110 shadow-lg z-10"
+          title="Close"
+        >
+          ✕
+        </button>
+        
         <h2 className="text-4xl font-extrabold mb-8 text-center text-blue-700 tracking-tight drop-shadow-sm">Plant Master Admin</h2>
 
         {!editMode && (
