@@ -2001,7 +2001,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
-import Truck from 'assets/truck.png';
+import Truck from '.assets/truck.png';
 const API_URL = import.meta.env.VITE_API_URL;
 
 function GateKeeper() {
