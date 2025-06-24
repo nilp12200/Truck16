@@ -2001,6 +2001,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
+import Truck from 'assets/truck.png';
 const API_URL = import.meta.env.VITE_API_URL;
 
 function GateKeeper() {
@@ -2160,7 +2161,7 @@ function GateKeeper() {
         <div className="col-span-1 space-y-4">
           <div className="relative h-56 w-full bg-blue-200 rounded-lg overflow-hidden shadow-md">
             <img
-              src="https://pngimg.com/uploads/truck/truck_PNG16234.png"
+              src="Truck.png"
               alt="Truck"
               className="absolute bottom-0 left-0 w-full h-40 object-contain"
             />
