@@ -1992,8 +1992,6 @@
 // export default GateKeeper;
 
 
-
-
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
@@ -2001,7 +1999,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
-import Truck from '.assets/truck.png';
+import Truck from './assets/truck.png'; // ✅ Corrected image import
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 function GateKeeper() {
@@ -2116,7 +2115,6 @@ function GateKeeper() {
   return (
     <div className="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen p-6">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-        {/* Close Button */}
         <button
           onClick={() => navigate('/home')}
           className="absolute top-4 right-4 w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full flex items-center justify-center hover:from-red-600 hover:to-red-700 transform transition-all duration-300 hover:scale-110 shadow-lg z-10"
@@ -2157,11 +2155,11 @@ function GateKeeper() {
           </div>
         </div>
 
-        {/* Center Panel - Truck Image with Panels */}
+        {/* Center Panel */}
         <div className="col-span-1 space-y-4">
           <div className="relative h-56 w-full bg-blue-200 rounded-lg overflow-hidden shadow-md">
             <img
-              src="Truck.png"
+              src={Truck} // ✅ Using imported image
               alt="Truck"
               className="absolute bottom-0 left-0 w-full h-40 object-contain"
             />
@@ -2192,7 +2190,7 @@ function GateKeeper() {
           </div>
         </div>
 
-        {/* Right Panel - Checked-In Trucks */}
+        {/* Right Panel */}
         <div className="col-span-1">
           <div className="bg-green-100 rounded-lg p-4 h-full overflow-y-auto">
             <h3 className="text-lg font-bold text-green-800 mb-2">Checked In Trucks</h3>
@@ -2239,15 +2237,3 @@ function GateKeeper() {
 }
 
 export default GateKeeper;
-
-
-
-
-
-
-
-
-
-
-
-
