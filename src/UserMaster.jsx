@@ -1547,13 +1547,14 @@
 //   );
 // }
 /////////////////////////////////////////////////////////////////////////////
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function UserMaster() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -1619,7 +1620,7 @@ export default function UserMaster() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-white px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-xl">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-xl relative">
         <button
           onClick={() => navigate('/home')}
           className="absolute top-4 right-4 w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full flex items-center justify-center hover:from-red-600 hover:to-red-700 transform transition-all duration-300 hover:scale-110 shadow-lg"
@@ -1690,7 +1691,7 @@ export default function UserMaster() {
             <label className="block mb-1 font-semibold">Allowed Plants</label>
             <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto border p-3 rounded bg-blue-50">
               {plantList.map((plant) => {
-                const plantId = String(plant.plantId || plant.plantid);
+                const plantId = String(plant.plantId || plant.plantid || plant.PlantID);
                 return (
                   <label key={plantId} className="flex items-center gap-2 text-sm">
                     <input
@@ -1701,7 +1702,7 @@ export default function UserMaster() {
                       onChange={handleChange}
                       className="accent-green-600"
                     />
-                    {plant.plantName || plant.plantname}
+                    {plant.plantName || plant.plantname || plant.PlantName}
                   </label>
                 );
               })}
@@ -1719,3 +1720,4 @@ export default function UserMaster() {
     </div>
   );
 }
+// ... existing code ...
