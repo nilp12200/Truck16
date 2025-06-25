@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function TruckFind() {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function TruckFind() {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.get('http://localhost:3001/api/truck-find');
+      const response = await axios.get(`${API_URL}/api/truck-find`);
       if (Array.isArray(response.data)) {
         setTruckData(response.data);
       } else {
