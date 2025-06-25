@@ -1550,7 +1550,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import CancelButton from './CancelButton';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -1621,7 +1621,7 @@ export default function UserMaster() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-white px-4">
       <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-xl">
-         <CancelButton/>
+      
         <h2 className="text-3xl font-bold text-center mb-6 text-blue-700 flex items-center justify-center gap-2">
           <span className="text-4xl">👤</span> User Master
         </h2>
