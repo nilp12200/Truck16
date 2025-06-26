@@ -1,3 +1,4 @@
+
 // import React from 'react';
 // import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 // import Home from './Home';
@@ -159,7 +160,7 @@ import TruckFind from './TruckFind.jsx';
 // Role-based access control
 const roleAccess = {
   owner:    ['plantmaster','usermaster','truck','gate','loader','reports','staff'],
-  admin:    ['plantmaster','usermaster','gate','reports','staff'],
+  admin:    ['plantmaster','usermaster','truck','gate','loader','reports','staff'],
   dispatch: ['truck','truckfind'],
   gatekeeper: ['gate'],
   report:   ['reports'],
