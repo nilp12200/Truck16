@@ -2195,6 +2195,207 @@
 
 
 
+// import React, { useEffect, useState } from 'react';
+// import axios from 'axios';
+// import { ToastContainer, toast } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
+// import truckImage from './assets/Truck.png';
+
+// const API_URL = import.meta.env.VITE_API_URL;
+
+// function GateKeeper() {
+//   const [formData, setFormData] = useState({
+//     truckNo: '',
+//     dispatchDate: new Date().toISOString().split('T')[0],
+//     invoiceNo: '',
+//     remarks: 'This is a system-generated remark.',
+//   });
+
+//   const [plantList, setPlantList] = useState([]);
+//   const [selectedPlant, setSelectedPlant] = useState('');
+//   const [truckNumbers, setTruckNumbers] = useState([]);
+//   const [checkedInTrucks, setCheckedInTrucks] = useState([]);
+//   const [quantityPanels, setQuantityPanels] = useState([]);
+
+//   useEffect(() => {
+//     const userId = localStorage.getItem('userId');
+//     const role = localStorage.getItem('role');
+
+//     axios.get(`${API_URL}/api/plants`, {
+//       headers: { userid: userId, role }
+//     })
+//       .then(res => setPlantList(res.data))
+//       .catch(err => console.error('Error fetching plants:', err));
+//   }, []);
+
+//   useEffect(() => {
+//     if (selectedPlant) {
+//       axios.get(`${API_URL}/api/trucks?plantName=${selectedPlant}`)
+//         .then(res => setTruckNumbers(res.data))
+//         .catch(err => console.error('Error fetching trucks:', err));
+
+//       axios.get(`${API_URL}/api/checked-in-trucks?plantName=${selectedPlant}`)
+//         .then(res => setCheckedInTrucks(res.data))
+//         .catch(err => console.error('Error fetching checked-in trucks:', err));
+//     }
+//   }, [selectedPlant]);
+
+//   const getTruckNo = (truck) => truck.TruckNo || truck.truckno || truck.truck_no || '';
+//   const getPlantName = (plant) => typeof plant === 'string' ? plant : (plant.PlantName || plant.plantname || 'Unknown');
+
+//   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+//   const handlePlantChange = (e) => {
+//     setSelectedPlant(e.target.value);
+//     setCheckedInTrucks([]);
+//     setQuantityPanels([]);
+//     setFormData(prev => ({ ...prev, truckNo: '', dispatchDate: new Date().toISOString().split('T')[0] }));
+//   };
+
+//   const handleTruckSelect = async (truckNo) => {
+//     setFormData(prev => ({ ...prev, truckNo }));
+//     try {
+//       const remarksRes = await axios.get(`${API_URL}/api/fetch-remarks`, {
+//         params: { plantName: selectedPlant, truckNo }
+//       });
+//       const quantityRes = await axios.get(`${API_URL}/api/truck-plant-quantities?truckNo=${truckNo}`);
+//       setQuantityPanels(quantityRes.data);
+//       setFormData(prev => ({ ...prev, remarks: remarksRes.data.remarks || 'No remarks available.' }));
+//     } catch (err) {
+//       console.error('Error fetching data:', err);
+//       setFormData(prev => ({ ...prev, remarks: 'No remarks available or error fetching remarks.' }));
+//     }
+//   };
+
+//   const handleSubmit = async (type) => {
+//     if (!formData.truckNo) return toast.warn('🚛 Please select a truck number.');
+//     try {
+//       const res = await axios.post(`${API_URL}/api/update-truck-status`, {
+//         truckNo: formData.truckNo,
+//         plantName: selectedPlant,
+//         type
+//       });
+//       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== formData.truckNo));
+//       if (type === 'Check In' && !checkedInTrucks.some(t => getTruckNo(t) === formData.truckNo)) {
+//         setCheckedInTrucks(prev => [...prev, { TruckNo: formData.truckNo }]);
+//       }
+//       toast.success(res.data.message);
+//       setFormData(prev => ({ ...prev, truckNo: '' }));
+//       setQuantityPanels([]);
+//     } catch (err) {
+//       console.error('Error:', err);
+//       toast.error('⚠️ Error while updating status');
+//     }
+//   };
+
+//   const maxQty = Math.max(...quantityPanels.map(p => p.quantity || 0));
+
+//   return (
+//     <div className="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen p-6">
+//       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+//         {/* Left Panel */}
+//         <div className="col-span-1 space-y-4">
+//           <select
+//             value={selectedPlant}
+//             onChange={handlePlantChange}
+//             className="w-full border px-4 py-2 rounded-md shadow-sm"
+//           >
+//             <option value="">Select Plant</option>
+//             {plantList.map((plant, i) => (
+//               <option key={i} value={getPlantName(plant)}>{getPlantName(plant)}</option>
+//             ))}
+//           </select>
+
+//           <div className="bg-blue-100 rounded-lg p-4 h-[300px] overflow-y-auto">
+//             <h3 className="text-md font-semibold text-blue-800 mb-2">Truck List</h3>
+//             <ul className="space-y-1 text-sm text-gray-700 cursor-pointer">
+//               {truckNumbers.map((truck, index) => (
+//                 <li key={index} onClick={() => handleTruckSelect(getTruckNo(truck))} className="hover:text-blue-600">
+//                   {getTruckNo(truck)}
+//                 </li>
+//               ))}
+//               {truckNumbers.length === 0 && <li className="text-gray-400 italic">No trucks available</li>}
+//             </ul>
+//           </div>
+//         </div>
+
+//         {/* Middle Panel */}
+//         <div className="col-span-1 space-y-4">
+//           <div className="relative h-56 w-full bg-blue-200 rounded-lg overflow-hidden shadow-md">
+
+//             {/* Bar Chart */}
+//             <div
+//               // className="absolute bottom-[60px] left-[50px] h-[75px] flex items-end gap-[2px] z-10"
+//                className="absolute bottom-[51px] left-[50px] h-[75px] w-[80px] flex items-end gap-[2px] z-10"
+//               style={{ width: 'calc(100% - 170px)', maxWidth: '370px' }}
+//             >
+//               {quantityPanels.map((panel, index) => {
+//                 const height = maxQty ? (panel.quantity / maxQty) * 100 : 0;
+//                 const bgColors = ['bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500'];
+//                 return (
+//                   <div
+//                     key={index}
+//                     className={`flex flex-col items-center justify-end text-white text-[10px] ${bgColors[index % bgColors.length]} rounded-t-md transition-transform transform hover:scale-105 hover:shadow-lg cursor-pointer`}
+//                     style={{ height: `${height}%`, width: `${100 / quantityPanels.length}%` }}
+//                     title={`${panel.plantname}: ${panel.quantity}`}
+//                   >
+//                     <div className="flex items-center gap-[2px]">
+//                       <span>📦</span>
+//                       <span>{panel.quantity}</span>
+//                     </div>
+//                     <div className="whitespace-nowrap text-[8px]">{panel.plantname}</div>
+//                   </div>
+//                 );
+//               })}
+//             </div>
+
+//             {/* Truck Image */}
+//             <img
+//               src={truckImage}
+//               alt="Truck"
+//               className="absolute bottom-0 left-0 w-full h-auto object-contain z-0"
+//               style={{ height: '65%' }}
+//             />
+//           </div>
+
+//           {/* Form Inputs */}
+//           <div className="space-y-2">
+//             <input name="truckNo" value={formData.truckNo} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" placeholder="Truck No" />
+//             <input name="dispatchDate" type="date" value={formData.dispatchDate} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" />
+//             <input name="invoiceNo" value={formData.invoiceNo} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" placeholder="Invoice No" />
+//             <textarea name="remarks" value={formData.remarks} readOnly className="w-full border rounded px-4 py-2 shadow-sm bg-gray-100 text-gray-700 resize-none h-24" />
+//           </div>
+
+//           <div className="flex justify-between mt-2">
+//             <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" onClick={() => handleSubmit('Check In')}>Check In</button>
+//             <button className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onClick={() => handleSubmit('Check Out')}>Check Out</button>
+//           </div>
+//         </div>
+
+//         {/* Right Panel */}
+//         <div className="col-span-1">
+//           <div className="bg-green-100 rounded-lg p-4 h-full overflow-y-auto">
+//             <h3 className="text-lg font-bold text-green-800 mb-2">Checked In Trucks</h3>
+//             <ul className="space-y-1 text-sm text-gray-700">
+//               {checkedInTrucks.map((truck, idx) => (
+//                 <li key={idx} className="hover:text-green-600 cursor-pointer" onClick={() => handleTruckSelect(getTruckNo(truck))}>
+//                   {getTruckNo(truck)}
+//                 </li>
+//               ))}
+//               {checkedInTrucks.length === 0 && <li className="text-gray-400 italic">No checked-in trucks</li>}
+//             </ul>
+//           </div>
+//         </div>
+//       </div>
+
+//       <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
+//     </div>
+//   );
+// }
+
+// export default GateKeeper;
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
@@ -2267,24 +2468,58 @@ function GateKeeper() {
     }
   };
 
+  const handleCheckedInClick = async (truckNo) => {
+    await handleTruckSelect(truckNo);
+  };
+
   const handleSubmit = async (type) => {
-    if (!formData.truckNo) return toast.warn('🚛 Please select a truck number.');
+    const { truckNo, dispatchDate, invoiceNo } = formData;
+
+    if (!selectedPlant) {
+      toast.warn('Please select a plant first.');
+      return;
+    }
+
+    if (!truckNo) {
+      toast.warn('🚛 Please select a truck number.');
+      return;
+    }
+
+    if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+      toast.error('🚫 This truck is already checked in!');
+      return;
+    }
+
+    const selectedPlantObj = plantList.find(p => getPlantName(p) === selectedPlant);
+    const plantName = selectedPlantObj ? getPlantName(selectedPlantObj) : '';
+
     try {
-      const res = await axios.post(`${API_URL}/api/update-truck-status`, {
-        truckNo: formData.truckNo,
-        plantName: selectedPlant,
-        type
+      const response = await axios.post(`${API_URL}/api/update-truck-status`, {
+        truckNo,
+        plantName,
+        type,
+        dispatchDate,
+        invoiceNo,
+        quantity: quantityPanels.reduce((acc, panel) => acc + (panel.quantity || 0), 0),
       });
-      setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== formData.truckNo));
-      if (type === 'Check In' && !checkedInTrucks.some(t => getTruckNo(t) === formData.truckNo)) {
-        setCheckedInTrucks(prev => [...prev, { TruckNo: formData.truckNo }]);
+
+      if (response.data.message?.includes('✅')) {
+        setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+
+        if (type === 'Check In') {
+          setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo }]);
+        }
+
+        toast.success(response.data.message);
+        setFormData(prev => ({ ...prev, truckNo: '' }));
+        setQuantityPanels([]);
+        localStorage.setItem('allowedPlants', response.data.allowedPlants || '');
+      } else {
+        toast.error(response.data.message || 'Failed to update status');
       }
-      toast.success(res.data.message);
-      setFormData(prev => ({ ...prev, truckNo: '' }));
-      setQuantityPanels([]);
     } catch (err) {
       console.error('Error:', err);
-      toast.error('⚠️ Error while updating status');
+      toast.error(err.response?.data?.message || 'Something went wrong.');
     }
   };
 
@@ -2323,11 +2558,8 @@ function GateKeeper() {
         {/* Middle Panel */}
         <div className="col-span-1 space-y-4">
           <div className="relative h-56 w-full bg-blue-200 rounded-lg overflow-hidden shadow-md">
-
-            {/* Bar Chart */}
             <div
-              // className="absolute bottom-[60px] left-[50px] h-[75px] flex items-end gap-[2px] z-10"
-               className="absolute bottom-[51px] left-[50px] h-[75px] w-[80px] flex items-end gap-[2px] z-10"
+              className="absolute bottom-[51px] left-[50px] h-[75px] w-[80px] flex items-end gap-[2px] z-10"
               style={{ width: 'calc(100% - 170px)', maxWidth: '370px' }}
             >
               {quantityPanels.map((panel, index) => {
@@ -2349,8 +2581,6 @@ function GateKeeper() {
                 );
               })}
             </div>
-
-            {/* Truck Image */}
             <img
               src={truckImage}
               alt="Truck"
@@ -2359,7 +2589,7 @@ function GateKeeper() {
             />
           </div>
 
-          {/* Form Inputs */}
+          {/* Form */}
           <div className="space-y-2">
             <input name="truckNo" value={formData.truckNo} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" placeholder="Truck No" />
             <input name="dispatchDate" type="date" value={formData.dispatchDate} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" />
@@ -2379,7 +2609,7 @@ function GateKeeper() {
             <h3 className="text-lg font-bold text-green-800 mb-2">Checked In Trucks</h3>
             <ul className="space-y-1 text-sm text-gray-700">
               {checkedInTrucks.map((truck, idx) => (
-                <li key={idx} className="hover:text-green-600 cursor-pointer" onClick={() => handleTruckSelect(getTruckNo(truck))}>
+                <li key={idx} className="hover:text-green-600 cursor-pointer" onClick={() => handleCheckedInClick(getTruckNo(truck))}>
                   {getTruckNo(truck)}
                 </li>
               ))}
@@ -2388,10 +2618,10 @@ function GateKeeper() {
           </div>
         </div>
       </div>
-
       <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
     </div>
   );
 }
 
 export default GateKeeper;
+
