@@ -143,6 +143,90 @@
 // }
 
 // export default App;
+// import React from 'react';
+// import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+// import Home from './Home';
+// import StaffPage from './StaffPage';
+// import Login from './Login';
+// import Navbar from './Navbar';
+// import 'bootstrap/dist/css/bootstrap.min.css';
+// import GateKeeper from './GateKeeper';
+// import TruckTransaction from './TruckTransaction';
+// import PlantMaster from './PlantMaster';
+// import Reports from './Report';
+// import UserMaster from './UserMaster';
+// import TruckFind from './TruckFind.jsx';
+
+// // Role-based access control
+// const roleAccess = {
+//   owner:    ['plantmaster','usermaster','truck','gate','loader','reports','staff'],
+//   admin:    ['plantmaster','usermaster','truck','gate','loader','reports','staff'],
+//   dispatch: ['truck','truckfind'],
+//   gatekeeper: ['gate'],
+//   report:   ['reports'],
+//   loader:   ['loader'],
+// };
+
+// // Authentication check
+// const isAuthenticated = () => {
+//   const username = localStorage.getItem('username');
+//   const userRole = localStorage.getItem('userRole');
+//   return username && userRole;
+// };
+
+// // Authorization check
+// const canAccessRoute = (requiredRoute) => {
+//   const roles = localStorage.getItem('userRole')?.split(',').map(r=>r.trim()) || [];
+//   return roles.some(role => roleAccess[role]?.includes(requiredRoute));
+// };
+
+// // Reusable protected route
+// function ProtectedRoute({ element: Component, requiredRoute }) {
+//   if (!isAuthenticated()) return <Navigate to="/" replace />;
+//   if (requiredRoute && !canAccessRoute(requiredRoute)) return <Navigate to="/home" replace />;
+//   return <Component />;
+// }
+
+// function Layout() {
+//   const location = useLocation();
+//   const hideNavbar = location.pathname === '/';
+
+//   return (
+//     <>
+//       {!hideNavbar && <Navbar />}
+//       <Routes>
+//         <Route path="/" element={<Login />} />
+
+//         {/* Routes requiring authentication */}
+//         <Route path="/home" element={<ProtectedRoute element={Home} />} />
+//         <Route path="/staff" element={<ProtectedRoute element={StaffPage} requiredRoute="staff" />} />
+//         <Route path="/gate" element={<ProtectedRoute element={GateKeeper} requiredRoute="gate" />} />
+//         <Route path="/truck" element={<ProtectedRoute element={TruckTransaction} requiredRoute="truck" />} />
+//         <Route path="/truckfind" element={<ProtectedRoute element={TruckFind} requiredRoute="truck" />} />
+//         <Route path="/plantmaster" element={<ProtectedRoute element={PlantMaster} requiredRoute="plantmaster" />} />
+//         <Route path="/reports" element={<ProtectedRoute element={Reports} requiredRoute="reports" />} />
+//         <Route path="/usermaster" element={<ProtectedRoute element={UserMaster} requiredRoute="usermaster" />} />
+
+//         {/* Wildcard: authenticated users go to home; unauthenticated go to login */}
+//         <Route
+//           path="*"
+//           element={
+//             isAuthenticated() ? <Navigate to="/home" replace /> : <Navigate to="/" replace />
+//           }
+//         />
+//       </Routes>
+//     </>
+//   );
+// }
+
+// export default function App() {
+//   return (
+//     <Router>
+//       <Layout />
+//     </Router>
+//   );
+// }
+// //////////////////////////////
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Home from './Home';
@@ -159,12 +243,12 @@ import TruckFind from './TruckFind.jsx';
 
 // Role-based access control
 const roleAccess = {
-  owner:    ['plantmaster','usermaster','truck','gate','loader','reports','staff'],
-  admin:    ['plantmaster','usermaster','truck','gate','loader','reports','staff'],
-  dispatch: ['truck','truckfind'],
+  owner: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'staff'],
+  admin: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'staff'],
+  dispatch: ['truck', 'truckfind'],
   gatekeeper: ['gate'],
-  report:   ['reports'],
-  loader:   ['loader'],
+  report: ['reports'],
+  loader: ['loader'],
 };
 
 // Authentication check
@@ -176,7 +260,10 @@ const isAuthenticated = () => {
 
 // Authorization check
 const canAccessRoute = (requiredRoute) => {
-  const roles = localStorage.getItem('userRole')?.split(',').map(r=>r.trim()) || [];
+  const roles = localStorage.getItem('userRole')
+    ?.split(',')
+    .map(r => r.trim().toLowerCase()) || [];
+
   return roles.some(role => roleAccess[role]?.includes(requiredRoute));
 };
 
