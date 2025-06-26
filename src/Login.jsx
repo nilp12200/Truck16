@@ -973,24 +973,23 @@ export default function Login() {
     try {
       const res = await axios.post(`${API_URL}/api/login`, {
         username: username.trim(),
-        password: password.trim(),
+        password: password.trim()
       });
 
-      console.log('Login Response:', res.data);
+      console.log("Login Response:", res.data);
 
       if (res.data.success) {
-        localStorage.setItem('userId', res.data.userId);          // ✅ Fix here
+        localStorage.setItem('userId', res.data.userid); // store userid
         localStorage.setItem('username', res.data.username);
         localStorage.setItem('userRole', res.data.role);
         localStorage.setItem('allowedPlants', res.data.allowedPlants);
-
         alert('Login successful');
-        navigate('/home');
+        navigate('/gate'); // or '/home' depending on your routing
       } else {
         alert(res.data.message || 'Invalid credentials');
       }
     } catch (err) {
-      console.error('Login error:', err.response?.data || err.message);
+      console.error('Login error:', err);
       alert(err.response?.data?.message || 'Server error');
     }
   };
@@ -998,57 +997,34 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 to-indigo-200 px-6 py-12">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-        <div className="flex justify-center mb-6">
-          <img
-            alt="Truck Tracking"
-            src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
-            className="h-12 w-12"
-          />
-        </div>
-        <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
-          Sign in to Truck_tracking
-        </h2>
-
+        <h2 className="text-center text-3xl font-bold text-gray-900">Sign in to Truck Tracking</h2>
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border px-4 py-2 shadow-sm focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border px-4 py-2 shadow-sm focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-white font-semibold hover:bg-indigo-500"
-            >
-              Sign in
-            </button>
-          </div>
+          <input
+            id="username"
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            className="w-full rounded-md border px-4 py-2 shadow-sm"
+          />
+          <input
+            id="password"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full rounded-md border px-4 py-2 shadow-sm"
+          />
+          <button
+            type="submit"
+            className="w-full rounded-md bg-indigo-600 py-2 text-white font-semibold hover:bg-indigo-500"
+          >
+            Sign In
+          </button>
         </form>
       </div>
     </div>
   );
 }
-
