@@ -3086,7 +3086,6 @@
 // export default GateKeeper;
 // *********************************************
 
-
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
@@ -3114,23 +3113,39 @@ function GateKeeper() {
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     const role = localStorage.getItem('role');
+    const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
 
     axios.get(`${API_URL}/api/plants`, {
       headers: { userid: userId, role }
     })
       .then(res => {
-        let allowed = (localStorage.getItem('allowedPlants') || '')
+        const allowed = allowedPlantsRaw
           .split(',')
           .map(id => id.trim())
           .filter(Boolean);
-        const filtered = res.data.filter(plant => 
-          allowed.includes(String(plant.PlantID)) || 
-          allowed.includes(String(plant.PlantId)) || 
-          allowed.includes(plant.PlantName)
-        );
+
+        console.log('User Role:', role);
+        console.log('Allowed Plants from localStorage:', allowed);
+        console.log('All Plants from API:', res.data);
+
+        let filtered;
+        if (role?.toLowerCase() === 'admin') {
+          filtered = res.data; // Show all plants
+        } else {
+          filtered = res.data.filter(plant =>
+            allowed.includes(String(plant.PlantID)) ||
+            allowed.includes(String(plant.PlantId)) ||
+            allowed.includes(plant.PlantName)
+          );
+        }
+
+        console.log('Filtered Plants:', filtered);
         setPlantList(filtered);
       })
-      .catch(err => console.error('Error fetching plants:', err));
+      .catch(err => {
+        console.error('Error fetching plants:', err);
+        toast.error('Failed to fetch plant list');
+      });
   }, []);
 
   useEffect(() => {
@@ -3146,7 +3161,8 @@ function GateKeeper() {
   }, [selectedPlant]);
 
   const getTruckNo = (truck) => truck.TruckNo || truck.truckno || truck.truck_no || '';
-  const getPlantName = (plant) => typeof plant === 'string' ? plant : (plant.PlantName || plant.plantname || 'Unknown');
+  const getPlantName = (plant) =>
+    typeof plant === 'string' ? plant : (plant.PlantName || plant.plantname || 'Unknown');
 
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
@@ -3154,21 +3170,33 @@ function GateKeeper() {
     setSelectedPlant(e.target.value);
     setCheckedInTrucks([]);
     setQuantityPanels([]);
-    setFormData(prev => ({ ...prev, truckNo: '', dispatchDate: new Date().toISOString().split('T')[0] }));
+    setFormData(prev => ({
+      ...prev,
+      truckNo: '',
+      dispatchDate: new Date().toISOString().split('T')[0]
+    }));
   };
 
   const handleTruckSelect = async (truckNo) => {
     setFormData(prev => ({ ...prev, truckNo }));
+
     try {
       const remarksRes = await axios.get(`${API_URL}/api/fetch-remarks`, {
         params: { plantName: selectedPlant, truckNo }
       });
       const quantityRes = await axios.get(`${API_URL}/api/truck-plant-quantities?truckNo=${truckNo}`);
+
       setQuantityPanels(quantityRes.data);
-      setFormData(prev => ({ ...prev, remarks: remarksRes.data.remarks || 'No remarks available.' }));
+      setFormData(prev => ({
+        ...prev,
+        remarks: remarksRes.data.remarks || 'No remarks available.'
+      }));
     } catch (err) {
       console.error('Error fetching data:', err);
-      setFormData(prev => ({ ...prev, remarks: 'No remarks available or error fetching remarks.' }));
+      setFormData(prev => ({
+        ...prev,
+        remarks: 'No remarks available or error fetching remarks.'
+      }));
     }
   };
 
@@ -3230,46 +3258,51 @@ function GateKeeper() {
 
   return (
     <div className="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+        {/* Close Button */}
         <button
           onClick={() => navigate('/home')}
-          className="absolute top-4 right-4 w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full flex items-center justify-center hover:from-red-600 hover:to-red-700 transform transition-all duration-300 hover:scale-110 shadow-lg z-10"
+          className="absolute top-4 right-4 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-700"
           title="Close"
         >
           ✕
         </button>
 
-        <div className="col-span-1 space-y-4">
+        {/* Left Panel - Plant & Truck List */}
+        <div className="space-y-4">
           <select
             value={selectedPlant}
             onChange={handlePlantChange}
-            className="w-full border px-4 py-2 rounded-md shadow-sm"
+            className="w-full border px-4 py-2 rounded-md"
           >
             <option value="">Select Plant</option>
             {plantList.map((plant, i) => (
-              <option key={i} value={getPlantName(plant)}>{getPlantName(plant)}</option>
+              <option key={i} value={getPlantName(plant)}>
+                {getPlantName(plant)}
+              </option>
             ))}
           </select>
 
           <div className="bg-blue-100 rounded-lg p-4 h-[300px] overflow-y-auto">
-            <h3 className="text-md font-semibold text-blue-800 mb-2">Truck List</h3>
+            <h3 className="font-semibold text-blue-800 mb-2">Truck List</h3>
             <ul className="space-y-1 text-sm text-gray-700 cursor-pointer">
-              {truckNumbers.map((truck, index) => (
-                <li key={index} onClick={() => handleTruckSelect(getTruckNo(truck))} className="hover:text-blue-600">
-                  {getTruckNo(truck)}
+              {truckNumbers.map((truck, i) => (
+                <li key={i} onClick={() => handleTruckSelect(getTruckNo(truck))} className="hover:text-blue-600">
+                  🚛 {getTruckNo(truck)}
                 </li>
               ))}
-              {truckNumbers.length === 0 && <li className="text-gray-400 italic">No trucks available</li>}
+              {truckNumbers.length === 0 && (
+                <li className="text-gray-400 italic">No trucks available</li>
+              )}
             </ul>
           </div>
         </div>
 
-        <div className="col-span-1 space-y-4">
+        {/* Center Panel - Form and Graph */}
+        <div className="space-y-4">
           <div className="relative h-56 w-full bg-blue-200 rounded-lg overflow-hidden shadow-md">
-            <div
-              className="absolute bottom-[51px] left-[50px] h-[75px] w-[80px] flex items-end gap-[2px] z-10"
-              style={{ width: 'calc(100% - 170px)', maxWidth: '370px' }}
-            >
+            <div className="absolute bottom-[51px] left-[50px] h-[75px] w-[80px] flex items-end gap-[2px] z-10"
+              style={{ width: 'calc(100% - 170px)', maxWidth: '370px' }}>
               {quantityPanels.map((panel, index) => {
                 const height = maxQty ? (panel.quantity / maxQty) * 100 : 0;
                 const bgColors = ['bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500'];
@@ -3289,39 +3322,33 @@ function GateKeeper() {
                 );
               })}
             </div>
-            <img
-              src={truckImage}
-              alt="Truck"
-              className="absolute bottom-0 left-0 w-full h-auto object-contain z-0"
-              style={{ height: '65%' }}
-            />
+            <img src={truckImage} alt="Truck" className="absolute bottom-0 left-0 w-full object-contain z-0" style={{ height: '65%' }} />
           </div>
 
-          <div className="space-y-2">
-            <input name="truckNo" value={formData.truckNo} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" placeholder="Truck No" />
-            <input name="dispatchDate" type="date" value={formData.dispatchDate} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" />
-            <input name="invoiceNo" value={formData.invoiceNo} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" placeholder="Invoice No" />
-            <textarea name="remarks" value={formData.remarks} readOnly className="w-full border rounded px-4 py-2 shadow-sm bg-gray-100 text-gray-700 resize-none h-24" />
-          </div>
+          <input name="truckNo" value={formData.truckNo} onChange={handleChange} placeholder="Truck No" className="w-full border p-2 rounded" />
+          <input name="dispatchDate" type="date" value={formData.dispatchDate} onChange={handleChange} className="w-full border p-2 rounded" />
+          <input name="invoiceNo" value={formData.invoiceNo} onChange={handleChange} placeholder="Invoice No" className="w-full border p-2 rounded" />
+          <textarea name="remarks" value={formData.remarks} readOnly className="w-full border p-2 rounded bg-gray-100 text-gray-700 h-24" />
 
-          <div className="flex justify-between mt-2">
-            <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" onClick={() => handleSubmit('Check In')}>Check In</button>
-            <button className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onClick={() => handleSubmit('Check Out')}>Check Out</button>
+          <div className="flex gap-4 mt-2">
+            <button onClick={() => handleSubmit('Check In')} className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700">Check In</button>
+            <button onClick={() => handleSubmit('Check Out')} className="flex-1 bg-red-600 text-white py-2 rounded hover:bg-red-700">Check Out</button>
           </div>
         </div>
 
-        <div className="col-span-1">
-          <div className="bg-green-100 rounded-lg p-4 h-full overflow-y-auto">
-            <h3 className="text-lg font-bold text-green-800 mb-2">Checked In Trucks</h3>
-            <ul className="space-y-1 text-sm text-gray-700">
-              {checkedInTrucks.map((truck, idx) => (
-                <li key={idx} className="hover:text-green-600 cursor-pointer" onClick={() => handleCheckedInClick(getTruckNo(truck))}>
-                  {getTruckNo(truck)}
-                </li>
-              ))}
-              {checkedInTrucks.length === 0 && <li className="text-gray-400 italic">No checked-in trucks</li>}
-            </ul>
-          </div>
+        {/* Right Panel - Checked In */}
+        <div className="bg-green-100 rounded-lg p-4 h-full overflow-y-auto">
+          <h3 className="font-semibold text-green-800 mb-2">Checked In Trucks</h3>
+          <ul className="space-y-1 text-sm text-gray-700">
+            {checkedInTrucks.map((truck, idx) => (
+              <li key={idx} onClick={() => handleCheckedInClick(getTruckNo(truck))} className="cursor-pointer hover:text-green-600">
+                ✓ {getTruckNo(truck)}
+              </li>
+            ))}
+            {checkedInTrucks.length === 0 && (
+              <li className="text-gray-400 italic">No checked-in trucks</li>
+            )}
+          </ul>
         </div>
       </div>
       <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
@@ -3330,4 +3357,3 @@ function GateKeeper() {
 }
 
 export default GateKeeper;
-
