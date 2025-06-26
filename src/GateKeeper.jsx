@@ -3087,52 +3087,221 @@
 // *********************************************
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import truck from './assets/truck.jpg';
+import { useNavigate } from 'react-router-dom';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = 'https://truck-lh56.onrender.com';
 
-export default function GateKeeper() {
+function GateKeeper() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    truckNo: '',
+    dispatchDate: new Date().toISOString().split('T')[0],
+    invoiceNo: '',
+    remarks: 'This is a system-generated remark.',
+    quantity: '',
+  });
+
   const [plantList, setPlantList] = useState([]);
   const [selectedPlant, setSelectedPlant] = useState('');
+  const [truckNumbers, setTruckNumbers] = useState([]);
+  const [checkedInTrucks, setCheckedInTrucks] = useState([]);
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     const role = localStorage.getItem('userRole');
 
-    if (!userId) {
-      console.error("❌ userId not found in localStorage");
-      return;
-    }
-
     axios.get(`${API_URL}/api/plants`, {
       headers: {
         userid: userId,
-        role: role || 'staff'
+        role: role
       }
     })
       .then(res => {
-        console.log("Fetched plants:", res.data);
-        setPlantList(res.data);
+        const allowed = (localStorage.getItem('allowedPlants') || '')
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean);
+
+        const filtered = res.data.filter(plant =>
+          allowed.includes(String(plant.plantid)) || role?.toLowerCase() === 'admin'
+        );
+
+        setPlantList(filtered);
       })
       .catch(err => {
-        console.error("Error fetching plants:", err);
+        console.error('Error fetching plants:', err);
+        toast.error('Failed to fetch plant list');
       });
   }, []);
 
+  useEffect(() => {
+    const selected = plantList.find(p => String(p.plantid) === String(selectedPlant));
+    const plantName = selected?.plantname || '';
+
+    if (!plantName) {
+      setTruckNumbers([]);
+      setCheckedInTrucks([]);
+      return;
+    }
+
+    axios.get(`${API_URL}/api/trucks?plantName=${encodeURIComponent(plantName)}`)
+      .then(res => setTruckNumbers(res.data))
+      .catch(err => console.error('Error fetching trucks:', err));
+
+    axios.get(`${API_URL}/api/checked-in-trucks?plantName=${encodeURIComponent(plantName)}`)
+      .then(res => setCheckedInTrucks(res.data))
+      .catch(err => console.error('Error fetching checked-in trucks:', err));
+  }, [selectedPlant, plantList]);
+
+  const handleChange = (e) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handlePlantChange = (e) => {
+    setSelectedPlant(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      truckNo: '',
+      dispatchDate: new Date().toISOString().split('T')[0],
+    }));
+  };
+
+  const handleTruckSelect = async (truckNo) => {
+    setFormData(prev => ({ ...prev, truckNo }));
+
+    const selectedPlantObj = plantList.find(p => String(p.plantid) === String(selectedPlant));
+    const plantName = selectedPlantObj?.plantname || '';
+
+    try {
+      const remarksRes = await axios.get(`${API_URL}/api/fetch-remarks`, {
+        params: { plantName, truckNo }
+      });
+
+      const qtyRes = await axios.get(`${API_URL}/api/fetch-qty`, {
+        params: { plantName, truckNo }
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        remarks: remarksRes.data.remarks || 'No remarks available.',
+        quantity: qtyRes.data.quantity || ''
+      }));
+    } catch (err) {
+      console.error('Error fetching remarks or quantity:', err);
+      toast.error('Error fetching truck details');
+    }
+  };
+
+  const handleCheckedInClick = (truckNo) => {
+    handleTruckSelect(truckNo);
+  };
+
+  const handleSubmit = async (type) => {
+    const { truckNo, dispatchDate, invoiceNo, quantity } = formData;
+
+    if (!selectedPlant) {
+      toast.warn('Please select a plant first.');
+      return;
+    }
+
+    if (!truckNo) {
+      toast.warn('Please select a truck.');
+      return;
+    }
+
+    const alreadyCheckedIn = checkedInTrucks.some(t => t.TruckNo === truckNo || t === truckNo);
+    if (type === 'Check In' && alreadyCheckedIn) {
+      toast.error('Truck is already checked in.');
+      return;
+    }
+
+    const plantName = plantList.find(p => String(p.plantid) === String(selectedPlant))?.plantname;
+
+    try {
+      const res = await axios.post(`${API_URL}/api/update-truck-status`, {
+        truckNo,
+        plantName,
+        type,
+        dispatchDate,
+        invoiceNo,
+        quantity,
+      });
+
+      if (res.data.message?.includes('✅')) {
+        setTruckNumbers(prev => prev.filter(t => t.TruckNo !== truckNo));
+        if (type === 'Check In') {
+          setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo }]);
+        }
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data.message || 'Failed to update truck status.');
+      }
+    } catch (err) {
+      console.error('Error submitting truck status:', err);
+      toast.error('Submission failed');
+    }
+  };
+
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">Gate Keeper Panel</h2>
-      <select
-        className="border px-4 py-2 rounded-md"
-        value={selectedPlant}
-        onChange={(e) => setSelectedPlant(e.target.value)}
-      >
-        <option value="">Select Plant</option>
-        {plantList.map((plant) => (
-          <option key={plant.plantid} value={plant.plantname}>
-            {plant.plantname}
-          </option>
-        ))}
-      </select>
+    <div className="min-h-screen p-6 bg-gradient-to-br from-blue-50 via-indigo-100 to-blue-200">
+      <div className="max-w-6xl mx-auto bg-white p-8 rounded-3xl shadow-lg grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Left: Plant and Truck Selection */}
+        <div>
+          <select value={selectedPlant} onChange={handlePlantChange} className="w-full border rounded-md p-3 mb-4">
+            <option value="">Select Plant</option>
+            {plantList.map(plant => (
+              <option key={plant.plantid} value={plant.plantid}>{plant.plantname}</option>
+            ))}
+          </select>
+
+          <div className="bg-blue-100 rounded-xl p-4 h-72 overflow-y-auto">
+            <h3 className="text-blue-800 font-semibold mb-2">Truck List</h3>
+            <ul>
+              {truckNumbers.map((truck, i) => (
+                <li key={i} onClick={() => handleTruckSelect(truck.TruckNo)} className="cursor-pointer hover:text-blue-600">
+                  🚛 {truck.TruckNo}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Center: Form */}
+        <div>
+          <img src={truck} alt="Truck" className="w-full h-40 object-contain rounded-xl mb-4" />
+          <input name="truckNo" value={formData.truckNo} onChange={handleChange} placeholder="Truck No" className="w-full border p-2 rounded mb-2" />
+          <input name="dispatchDate" value={formData.dispatchDate} onChange={handleChange} type="date" className="w-full border p-2 rounded mb-2" />
+          <input name="invoiceNo" value={formData.invoiceNo} onChange={handleChange} placeholder="Invoice No" className="w-full border p-2 rounded mb-2" />
+          <textarea name="remarks" value={formData.remarks} readOnly className="w-full border p-2 rounded mb-2 bg-gray-100" />
+          <input name="quantity" value={formData.quantity} onChange={handleChange} placeholder="Quantity" className="w-full border p-2 rounded mb-4" />
+
+          <div className="flex justify-between gap-4">
+            <button onClick={() => handleSubmit('Check In')} className="w-full bg-green-500 text-white p-3 rounded hover:bg-green-600">Check In</button>
+            <button onClick={() => handleSubmit('Check Out')} className="w-full bg-red-500 text-white p-3 rounded hover:bg-red-600">Check Out</button>
+          </div>
+        </div>
+
+        {/* Right: Checked In Trucks */}
+        <div>
+          <h3 className="text-green-800 font-semibold mb-2">Checked In Trucks</h3>
+          <div className="bg-green-100 rounded-xl p-4 h-72 overflow-y-auto">
+            <ul>
+              {checkedInTrucks.map((truck, idx) => (
+                <li key={idx} className="cursor-pointer hover:text-green-600" onClick={() => handleCheckedInClick(truck.TruckNo)}>
+                  ✓ {truck.TruckNo}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <ToastContainer position="top-center" autoClose={3000} />
     </div>
   );
 }
+
+export default GateKeeper;
