@@ -3107,14 +3107,13 @@ function GateKeeper() {
   const [checkedInTrucks, setCheckedInTrucks] = useState([]);
   const [quantityPanels, setQuantityPanels] = useState([]);
 
-  const getTruckNo = (truck) => truck.TruckNo || truck.truckno || truck.truck_no || '';
-  const getPlantName = (plant) => typeof plant === 'string' ? plant : (plant.plantname || plant.PlantName || 'Unknown');
-
+  // ✅ Get allowed plants for user
   useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    const role = localStorage.getItem('role');
+    const userId = localStorage.getItem('userId'); // ✅ now correctly set during login
+    const role = localStorage.getItem('userRole');
+
     if (!userId) {
-      console.error("❌ userId not found in localStorage");
+      console.warn('❌ userId not found in localStorage');
       return;
     }
 
@@ -3137,41 +3136,30 @@ function GateKeeper() {
     }
   }, [selectedPlant]);
 
-  const handleChange = (e) =>
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const getTruckNo = (truck) => truck.TruckNo || truck.truckno || truck.truck_no || '';
+  const getPlantName = (plant) => typeof plant === 'string' ? plant : (plant.PlantName || plant.plantname || 'Unknown');
+
+  const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handlePlantChange = (e) => {
     setSelectedPlant(e.target.value);
     setCheckedInTrucks([]);
     setQuantityPanels([]);
-    setFormData(prev => ({
-      ...prev,
-      truckNo: '',
-      dispatchDate: new Date().toISOString().split('T')[0],
-    }));
+    setFormData(prev => ({ ...prev, truckNo: '', dispatchDate: new Date().toISOString().split('T')[0] }));
   };
 
   const handleTruckSelect = async (truckNo) => {
     setFormData(prev => ({ ...prev, truckNo }));
-
     try {
       const remarksRes = await axios.get(`${API_URL}/api/fetch-remarks`, {
         params: { plantName: selectedPlant, truckNo }
       });
-
       const quantityRes = await axios.get(`${API_URL}/api/truck-plant-quantities?truckNo=${truckNo}`);
-
       setQuantityPanels(quantityRes.data);
-      setFormData(prev => ({
-        ...prev,
-        remarks: remarksRes.data.remarks || 'No remarks available.'
-      }));
+      setFormData(prev => ({ ...prev, remarks: remarksRes.data.remarks || 'No remarks available.' }));
     } catch (err) {
       console.error('Error fetching data:', err);
-      setFormData(prev => ({
-        ...prev,
-        remarks: 'No remarks available or error fetching remarks.'
-      }));
+      setFormData(prev => ({ ...prev, remarks: 'No remarks available or error fetching remarks.' }));
     }
   };
 
@@ -3182,11 +3170,19 @@ function GateKeeper() {
   const handleSubmit = async (type) => {
     const { truckNo, dispatchDate, invoiceNo } = formData;
 
-    if (!selectedPlant) return toast.warn('Please select a plant first.');
-    if (!truckNo) return toast.warn('🚛 Please select a truck number.');
+    if (!selectedPlant) {
+      toast.warn('Please select a plant first.');
+      return;
+    }
+
+    if (!truckNo) {
+      toast.warn('🚛 Please select a truck number.');
+      return;
+    }
 
     if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
-      return toast.error('🚫 This truck is already checked in!');
+      toast.error('🚫 This truck is already checked in!');
+      return;
     }
 
     const selectedPlantObj = plantList.find(p => getPlantName(p) === selectedPlant);
@@ -3285,6 +3281,7 @@ function GateKeeper() {
             />
           </div>
 
+          {/* Form */}
           <div className="space-y-2">
             <input name="truckNo" value={formData.truckNo} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" placeholder="Truck No" />
             <input name="dispatchDate" type="date" value={formData.dispatchDate} onChange={handleChange} className="w-full border rounded px-4 py-2 shadow-sm" />
@@ -3313,11 +3310,9 @@ function GateKeeper() {
           </div>
         </div>
       </div>
-
       <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
     </div>
   );
 }
 
 export default GateKeeper;
-
