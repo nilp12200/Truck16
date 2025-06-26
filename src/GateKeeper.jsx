@@ -3113,57 +3113,42 @@ function GateKeeper() {
     const userId = localStorage.getItem('userId');
     const role = localStorage.getItem('role');
     const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
+    const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
 
-    console.log("🚀 User Role:", role);
-    console.log("✅ Allowed Plants from localStorage:", allowedPlantsRaw);
+    console.log('🚀 User Role:', role);
+    console.log('✅ Allowed Plants from localStorage:', allowedPlants);
 
     axios.get(`${API_URL}/api/plants`, {
       headers: { userid: userId, role }
     })
-      .then(res => {
-        const allPlants = res.data;
-        console.log("🌿 All Plants from API:", allPlants.map(p => p.PlantName || p.plantname));
-
-        const allowed = allowedPlantsRaw
-          .split(',')
-          .map(id => id.trim())
-          .filter(Boolean);
-
-        let filtered = [];
-
-        if (role?.toLowerCase() === 'admin') {
-          filtered = allPlants;
-        } else {
-          filtered = allPlants.filter(plant =>
-            allowed.includes(String(plant.PlantID)) ||
-            allowed.includes(String(plant.PlantId)) ||
-            allowed.includes(plant.PlantName)
-          );
-        }
-
-        console.log("🌱 Filtered Plants:", filtered.map(p => p.PlantName || p.plantname));
-        setPlantList(filtered);
-      })
-      .catch(err => {
-        console.error('❌ Error fetching plants:', err);
-        toast.error('Failed to fetch plant list');
+    .then(res => {
+      console.log('🌿 All Plants from API:', res.data.map(p => p.PlantName || p.plantname));
+      const filtered = res.data.filter(plant => {
+        const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
+        return allowedPlants.includes(pid) || role?.toLowerCase() === 'admin';
       });
+      console.log('🌱 Filtered Plants:', filtered.map(p => p.PlantName || p.plantname));
+      setPlantList(filtered);
+    })
+    .catch(err => {
+      console.error('❌ Error fetching plants:', err);
+      toast.error('Failed to fetch plant list');
+    });
   }, []);
 
   useEffect(() => {
-    if (selectedPlant) {
-      axios.get(`${API_URL}/api/trucks?plantName=${selectedPlant}`)
-        .then(res => setTruckNumbers(res.data))
-        .catch(err => console.error('Error fetching trucks:', err));
+    if (!selectedPlant) return;
+    axios.get(`${API_URL}/api/trucks?plantName=${selectedPlant}`)
+      .then(res => setTruckNumbers(res.data))
+      .catch(err => console.error('Error fetching trucks:', err));
 
-      axios.get(`${API_URL}/api/checked-in-trucks?plantName=${selectedPlant}`)
-        .then(res => setCheckedInTrucks(res.data))
-        .catch(err => console.error('Error fetching checked-in trucks:', err));
-    }
+    axios.get(`${API_URL}/api/checked-in-trucks?plantName=${selectedPlant}`)
+      .then(res => setCheckedInTrucks(res.data))
+      .catch(err => console.error('Error fetching checked-in trucks:', err));
   }, [selectedPlant]);
 
-  const getTruckNo = (truck) => truck.TruckNo || truck.truckno || truck.truck_no || '';
-  const getPlantName = (plant) => typeof plant === 'string' ? plant : (plant.PlantName || plant.plantname || 'Unknown');
+  const getTruckNo = truck => truck.TruckNo || truck.truckno || truck.truck_no || '';
+  const getPlantName = plant => typeof plant === 'string' ? plant : (plant.PlantName || plant.plantname || 'Unknown');
 
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
@@ -3189,47 +3174,32 @@ function GateKeeper() {
     }
   };
 
-  const handleCheckedInClick = async (truckNo) => {
-    await handleTruckSelect(truckNo);
-  };
+  const handleCheckedInClick = (truckNo) => handleTruckSelect(truckNo);
 
   const handleSubmit = async (type) => {
     const { truckNo, dispatchDate, invoiceNo } = formData;
+    const role = localStorage.getItem('role');
 
-    if (!selectedPlant) {
-      toast.warn('Please select a plant first.');
-      return;
-    }
-
-    if (!truckNo) {
-      toast.warn('🚛 Please select a truck number.');
-      return;
-    }
-
+    if (!selectedPlant) return toast.warn('Please select a plant first.');
+    if (!truckNo) return toast.warn('🚛 Please select a truck number.');
     if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
-      toast.error('🚫 This truck is already checked in!');
-      return;
+      return toast.error('🚫 This truck is already checked in!');
     }
-
-    const plantName = selectedPlant;
 
     try {
+      const plantName = selectedPlant;
       const response = await axios.post(`${API_URL}/api/update-truck-status`, {
         truckNo,
         plantName,
         type,
         dispatchDate,
         invoiceNo,
-        quantity: quantityPanels.reduce((acc, panel) => acc + (panel.quantity || 0), 0),
+        quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
       });
 
       if (response.data.message?.includes('✅')) {
         setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
-
-        if (type === 'Check In') {
-          setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo }]);
-        }
-
+        if (type === 'Check In') setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo }]);
         toast.success(response.data.message);
         setFormData(prev => ({ ...prev, truckNo: '' }));
         setQuantityPanels([]);
@@ -3242,91 +3212,56 @@ function GateKeeper() {
     }
   };
 
-  const maxQty = Math.max(...quantityPanels.map(p => p.quantity || 0));
+  const maxQty = Math.max(...quantityPanels.map(p => p.quantity || 0), 0);
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <button
-          onClick={() => navigate('/home')}
-          className="absolute top-4 right-4 w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 z-10"
-          title="Close"
-        >✕</button>
-
-        {/* Left Panel */}
-        <div className="col-span-1 space-y-4">
-          <select
-            value={selectedPlant}
-            onChange={handlePlantChange}
-            className="w-full border px-4 py-2 rounded-md shadow-sm"
-          >
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 p-6">
+      <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Plant and Truck List */}
+        <div className="space-y-4">
+          <select value={selectedPlant} onChange={handlePlantChange} className="w-full border rounded px-4 py-2">
             <option value="">Select Plant</option>
             {plantList.map((plant, i) => (
               <option key={i} value={getPlantName(plant)}>{getPlantName(plant)}</option>
             ))}
           </select>
-
-          <div className="bg-blue-100 rounded-lg p-4 h-[300px] overflow-y-auto">
-            <h3 className="text-md font-semibold text-blue-800 mb-2">Truck List</h3>
-            <ul className="space-y-1 text-sm text-gray-700 cursor-pointer">
-              {truckNumbers.map((truck, index) => (
-                <li key={index} onClick={() => handleTruckSelect(getTruckNo(truck))} className="hover:text-blue-600">
-                  {getTruckNo(truck)}
+          <div className="bg-blue-100 rounded p-4 h-64 overflow-y-auto">
+            <h3 className="font-bold text-blue-700">Truck List</h3>
+            {truckNumbers.length === 0 && <p className="text-gray-400 italic">No trucks available</p>}
+            <ul>
+              {truckNumbers.map((t, i) => (
+                <li key={i} onClick={() => handleTruckSelect(getTruckNo(t))} className="cursor-pointer hover:text-blue-600">
+                  🚛 {getTruckNo(t)}
                 </li>
               ))}
-              {truckNumbers.length === 0 && <li className="text-gray-400 italic">No trucks available</li>}
             </ul>
           </div>
         </div>
 
-        {/* Center Panel */}
-        <div className="col-span-1 space-y-4">
-          <div className="relative h-56 w-full bg-blue-200 rounded-lg overflow-hidden shadow-md">
-            <div className="absolute bottom-[51px] left-[50px] h-[75px] w-[80px] flex items-end gap-[2px] z-10"
-              style={{ width: 'calc(100% - 170px)', maxWidth: '370px' }}>
-              {quantityPanels.map((panel, index) => {
-                const height = maxQty ? (panel.quantity / maxQty) * 100 : 0;
-                const bgColors = ['bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500'];
-                return (
-                  <div
-                    key={index}
-                    className={`flex flex-col items-center justify-end text-white text-[10px] ${bgColors[index % bgColors.length]} rounded-t-md`}
-                    style={{ height: `${height}%`, width: `${100 / quantityPanels.length}%` }}
-                    title={`${panel.plantname}: ${panel.quantity}`}
-                  >
-                    <span>📦 {panel.quantity}</span>
-                    <div className="text-[8px]">{panel.plantname}</div>
-                  </div>
-                );
-              })}
-            </div>
-            <img src={truckImage} alt="Truck" className="absolute bottom-0 left-0 w-full h-auto object-contain z-0" style={{ height: '65%' }} />
-          </div>
-
-          <input name="truckNo" value={formData.truckNo} onChange={handleChange} className="w-full border px-4 py-2 rounded" placeholder="Truck No" />
+        {/* Center Form Panel */}
+        <div className="space-y-4">
+          <img src={truckImage} alt="Truck" className="w-full object-contain rounded shadow" />
+          <input name="truckNo" value={formData.truckNo} onChange={handleChange} placeholder="Truck No" className="w-full border px-4 py-2 rounded" />
           <input name="dispatchDate" type="date" value={formData.dispatchDate} onChange={handleChange} className="w-full border px-4 py-2 rounded" />
-          <input name="invoiceNo" value={formData.invoiceNo} onChange={handleChange} className="w-full border px-4 py-2 rounded" placeholder="Invoice No" />
-          <textarea name="remarks" value={formData.remarks} readOnly className="w-full border px-4 py-2 rounded bg-gray-100" rows={3} />
-
-          <div className="flex gap-4 mt-2">
-            <button className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700" onClick={() => handleSubmit('Check In')}>Check In</button>
-            <button className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700" onClick={() => handleSubmit('Check Out')}>Check Out</button>
+          <input name="invoiceNo" value={formData.invoiceNo} onChange={handleChange} placeholder="Invoice No" className="w-full border px-4 py-2 rounded" />
+          <textarea name="remarks" readOnly value={formData.remarks} className="w-full border px-4 py-2 bg-gray-100 rounded" rows="3" />
+          <div className="flex gap-4">
+            <button onClick={() => handleSubmit('Check In')} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Check In</button>
+            <button onClick={() => handleSubmit('Check Out')} className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">Check Out</button>
           </div>
         </div>
 
-        {/* Right Panel */}
-        <div className="col-span-1">
-          <div className="bg-green-100 rounded-lg p-4 h-full overflow-y-auto">
-            <h3 className="text-lg font-bold text-green-800 mb-2">Checked In Trucks</h3>
-            <ul className="space-y-1 text-sm text-gray-700">
-              {checkedInTrucks.map((truck, idx) => (
-                <li key={idx} className="hover:text-green-600 cursor-pointer" onClick={() => handleCheckedInClick(getTruckNo(truck))}>
-                  {getTruckNo(truck)}
-                </li>
-              ))}
-              {checkedInTrucks.length === 0 && <li className="text-gray-400 italic">No checked-in trucks</li>}
-            </ul>
-          </div>
+        {/* Checked In Trucks */}
+        <div className="bg-green-100 rounded p-4 h-full overflow-y-auto">
+          <h3 className="font-bold text-green-700 mb-2">Checked In Trucks</h3>
+          {checkedInTrucks.length === 0 && <p className="text-gray-400 italic">No checked-in trucks</p>}
+          <ul>
+            {checkedInTrucks.map((t, i) => (
+              <li key={i} onClick={() => handleCheckedInClick(getTruckNo(t))} className="cursor-pointer hover:text-green-600">
+                ✓ {getTruckNo(t)}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
       <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
@@ -3335,3 +3270,4 @@ function GateKeeper() {
 }
 
 export default GateKeeper;
+
