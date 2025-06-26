@@ -3090,7 +3090,6 @@ import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import truck from './assets/Truck.png';
-
 import { useNavigate } from 'react-router-dom';
 
 const API_URL = 'https://truck-lh56.onrender.com';
