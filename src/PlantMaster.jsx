@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Pencil, Trash2 } from 'lucide-react';
-import CancelButton from './CancelButton';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -138,7 +138,7 @@ export default function PlantMaster() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-xl p-6">
-        <CancelButton />
+    
         <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">Plant Master Admin</h2>
 
         {!editMode && (
