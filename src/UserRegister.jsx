@@ -16,13 +16,15 @@ const iconDelete = (
 
 const UserRegister = () => {
   const [users, setUsers] = useState([]);
+  const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editIdx, setEditIdx] = useState(null);
-  const [editUser, setEditUser] = useState({ Username: '', Password: '', Role: '' });
+  const [editUser, setEditUser] = useState({ Username: '', Password: '', Role: '', AllowedPlant: '' });
 
   useEffect(() => {
     fetchUsers();
+    fetchPlants();
   }, []);
 
   const fetchUsers = async () => {
@@ -33,11 +35,11 @@ const UserRegister = () => {
       if (!response.ok) throw new Error('Failed to fetch users');
       const data = await response.json();
 
-      // Normalize field names to match component expectations
       const normalized = data.map(u => ({
         Username: u.username,
         Password: u.password,
-        Role: u.role
+        Role: u.role,
+        AllowedPlant: u.allowed_plant || ''
       }));
 
       setUsers(normalized);
@@ -46,6 +48,22 @@ const UserRegister = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPlants = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/plantmaster`);
+      if (!response.ok) throw new Error('Failed to fetch plant data');
+      const data = await response.json();
+      setPlants(data); // format: [{ PlantId: 1, PlantName: 'Ahmedabad' }]
+    } catch (err) {
+      console.error('Error fetching plants:', err);
+    }
+  };
+
+  const getPlantName = (plantId) => {
+    const plant = plants.find(p => p.PlantId === Number(plantId));
+    return plant ? plant.PlantName : plantId;
   };
 
   const handleDelete = async (username) => {
@@ -83,7 +101,8 @@ const UserRegister = () => {
         body: JSON.stringify({
           username: editUser.Username,
           password: editUser.Password,
-          role: editUser.Role
+          role: editUser.Role,
+          allowed_plant: editUser.AllowedPlant
         })
       });
       if (!response.ok) throw new Error('Failed to update user');
@@ -119,27 +138,27 @@ const UserRegister = () => {
           background: '#f4f6fa',
           boxShadow: '0 2px 12px rgba(0,0,0,0.07)'
         }}>
-          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 600 }}>
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 900 }}>
             <thead>
               <tr style={{ background: '#1976d2', color: '#fff' }}>
-                <th style={{ padding: '14px', fontWeight: 700, letterSpacing: 1 }}>User</th>
-                <th style={{ padding: '14px', fontWeight: 700, letterSpacing: 1 }}>Password</th>
-                <th style={{ padding: '14px', fontWeight: 700, letterSpacing: 1 }}>Role</th>
-                <th style={{ padding: '14px', fontWeight: 700, letterSpacing: 1 }}>Edit</th>
-                <th style={{ padding: '14px', fontWeight: 700, letterSpacing: 1 }}>Delete</th>
+                <th style={{ padding: '14px', fontWeight: 700 }}>User</th>
+                <th style={{ padding: '14px', fontWeight: 700 }}>Password</th>
+                <th style={{ padding: '14px', fontWeight: 700 }}>Role</th>
+                <th style={{ padding: '14px', fontWeight: 700 }}>Allowed Plant</th>
+                <th style={{ padding: '14px', fontWeight: 700 }}>Edit</th>
+                <th style={{ padding: '14px', fontWeight: 700 }}>Delete</th>
               </tr>
             </thead>
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '1.5rem', color: '#888' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '1.5rem', color: '#888' }}>
                     No users found.
                   </td>
                 </tr>
               ) : users.map((user, idx) => (
                 <tr key={idx} style={{
-                  background: idx === editIdx ? '#fffde7' : idx % 2 === 0 ? '#fff' : '#e3eafc',
-                  transition: 'background 0.2s'
+                  background: idx === editIdx ? '#fffde7' : idx % 2 === 0 ? '#fff' : '#e3eafc'
                 }}>
                   {editIdx === idx ? (
                     <>
@@ -174,6 +193,21 @@ const UserRegister = () => {
                           <option value="Loader">Loader</option>
                         </select>
                       </td>
+                      <td>
+                        <select
+                          name="AllowedPlant"
+                          value={editUser.AllowedPlant}
+                          onChange={handleEditChange}
+                          style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #bdbdbd' }}
+                        >
+                          <option value="">Select Plant</option>
+                          {plants.map(plant => (
+                            <option key={plant.PlantId} value={plant.PlantId}>
+                              {plant.PlantName}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
                       <td colSpan={2} style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                         <button
                           onClick={() => handleEditSave(user.Username)}
@@ -190,6 +224,7 @@ const UserRegister = () => {
                       <td style={{ padding: '12px', fontWeight: 500 }}>{user.Username}</td>
                       <td style={{ padding: '12px', fontWeight: 500 }}>{'*'.repeat(user.Password?.length || 8)}</td>
                       <td style={{ padding: '12px', fontWeight: 500 }}>{user.Role}</td>
+                      <td style={{ padding: '12px', fontWeight: 500 }}>{getPlantName(user.AllowedPlant)}</td>
                       <td style={{ padding: '12px' }}>
                         <button
                           onClick={() => handleEdit(user, idx)}
