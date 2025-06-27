@@ -3340,9 +3340,9 @@ function GateKeeper() {
 //     toast.error('Failed to fetch plant list');
 //   });
 // }, []);
-  useEffect(() => {
+ useEffect(() => {
   const userId = localStorage.getItem('userId');
-  const role = (localStorage.getItem('role') || '').toLowerCase();
+  const role = (localStorage.getItem('role') || '').toLowerCase();  // ✅ Normalize role
   const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
   const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
 
@@ -3354,11 +3354,11 @@ function GateKeeper() {
   .then(res => {
     const filtered = res.data.filter(plant => {
       const pid = String(plant.PlantID || plant.PlantId || plant.plantid || plant.id || '');
-      
-      // ✅ Admin: show all plants
-      if (role === 'Admin') return true;
 
-      // ✅ GateKeeper and others: only show allowed plants
+      // ✅ Show all plants if Admin
+      if (role === 'admin') return true;
+
+      // ✅ Otherwise, filter by allowed
       return allowedPlants.includes(pid);
     });
 
@@ -3370,7 +3370,6 @@ function GateKeeper() {
   });
 }, []);
 
-  
   useEffect(() => {
     if (!selectedPlant) return;
     axios.get(`${API_URL}/api/trucks?plantName=${selectedPlant}`)
