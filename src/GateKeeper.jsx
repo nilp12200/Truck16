@@ -3501,26 +3501,30 @@ function GateKeeper() {
   const [checkedInTrucks, setCheckedInTrucks] = useState([]);
   const [quantityPanels, setQuantityPanels] = useState([]);
 
- useEffect(() => {
+useEffect(() => {
   const userId = localStorage.getItem('userId');
-  const role = localStorage.getItem('role');
+  const role = localStorage.getItem('role'); // Expecting exact case like "Admin"
   const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
   const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
 
-  console.log('🌱 Role:', role, 'Allowed Plants:', allowedPlants);
+  console.log('👤 Role:', role);
+  console.log('✅ Allowed Plants:', allowedPlants);
 
   axios.get(`${API_URL}/api/plants`, {
     headers: { userid: userId, role }
   })
   .then(res => {
-    if (role?.toLowerCase() === 'Admin') {
-      console.log('👑 Admin access - showing all plants');
+    if (role === 'Admin') {
+      // Admin sees all plants
+      console.log('👑 Admin detected — showing all plants');
       setPlantList(res.data);
     } else {
+      // Other users see only allowed plants
       const filtered = res.data.filter(plant => {
-        const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
-        return allowedPlants.includes(pid);
+        const plantId = String(plant.PlantID || plant.PlantId || plant.plantid || '');
+        return allowedPlants.includes(plantId);
       });
+      console.log('🙋 Filtered view for non-admin user');
       setPlantList(filtered);
     }
   })
