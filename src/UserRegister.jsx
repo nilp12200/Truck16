@@ -16,6 +16,7 @@ const iconDelete = (
 
 const UserRegister = () => {
   const [users, setUsers] = useState([]);
+  const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editIdx, setEditIdx] = useState(null);
@@ -23,6 +24,7 @@ const UserRegister = () => {
 
   useEffect(() => {
     fetchUsers();
+    fetchPlants();
   }, []);
 
   const fetchUsers = async () => {
@@ -32,20 +34,34 @@ const UserRegister = () => {
       const response = await fetch(`${API_URL}/api/users`);
       if (!response.ok) throw new Error('Failed to fetch users');
       const data = await response.json();
-
       const normalized = data.map(u => ({
         Username: u.username,
         Password: u.password,
         Role: u.role,
         AllowedPlant: u.allowed_plant || ''
       }));
-
       setUsers(normalized);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPlants = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/plantmaster`);
+      if (!response.ok) throw new Error('Failed to fetch plants');
+      const data = await response.json();
+      setPlants(data);
+    } catch (err) {
+      console.error('Error fetching plants:', err.message);
+    }
+  };
+
+  const getPlantNameById = (plantId) => {
+    const plant = plants.find(p => p.id?.toString() === plantId?.toString());
+    return plant ? plant.plant_name : plantId;
   };
 
   const handleDelete = async (username) => {
@@ -177,12 +193,19 @@ const UserRegister = () => {
                         </select>
                       </td>
                       <td>
-                        <input
+                        <select
                           name="AllowedPlant"
                           value={editUser.AllowedPlant}
                           onChange={handleEditChange}
                           style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #bdbdbd' }}
-                        />
+                        >
+                          <option value="">-- Select Plant --</option>
+                          {plants.map(plant => (
+                            <option key={plant.id} value={plant.id}>
+                              {plant.plant_name}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td colSpan={2} style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                         <button
@@ -200,7 +223,7 @@ const UserRegister = () => {
                       <td style={{ padding: '12px', fontWeight: 500 }}>{user.Username}</td>
                       <td style={{ padding: '12px', fontWeight: 500 }}>{'*'.repeat(user.Password?.length || 8)}</td>
                       <td style={{ padding: '12px', fontWeight: 500 }}>{user.Role}</td>
-                      <td style={{ padding: '12px', fontWeight: 500 }}>{user.AllowedPlant}</td>
+                      <td style={{ padding: '12px', fontWeight: 500 }}>{getPlantNameById(user.AllowedPlant)}</td>
                       <td style={{ padding: '12px' }}>
                         <button
                           onClick={() => handleEdit(user, idx)}
