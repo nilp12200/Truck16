@@ -3340,27 +3340,31 @@ function GateKeeper() {
 //     toast.error('Failed to fetch plant list');
 //   });
 // }, []);
- useEffect(() => {
+useEffect(() => {
   const userId = localStorage.getItem('userId');
-  const role = (localStorage.getItem('role') || '').toLowerCase();  // ✅ Normalize role
+  const rawRole = localStorage.getItem('role') || localStorage.getItem('userRole') || '';
+  const role = rawRole.toLowerCase(); // 🔥 Normalize role
   const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
   const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   axios.get(`${API_URL}/api/plants`, {
-    headers: { userid: userId, role }
+    headers: { userid: userId, role: rawRole } // use original casing for headers if needed
   })
   .then(res => {
-    const filtered = res.data.filter(plant => {
-      const pid = String(plant.PlantID || plant.PlantId || plant.plantid || plant.id || '');
+    let filtered = [];
 
-      // ✅ Show all plants if Admin
-      if (role === 'admin') return true;
-
-      // ✅ Otherwise, filter by allowed
-      return allowedPlants.includes(pid);
-    });
+    // ✅ If Admin, show all plants
+    if (role === 'admin') {
+      filtered = res.data;
+    } else {
+      // ✅ Otherwise, filter only allowedPlants
+      filtered = res.data.filter(plant => {
+        const pid = String(plant.PlantID || plant.PlantId || plant.plantid || plant.id || '');
+        return allowedPlants.includes(pid);
+      });
+    }
 
     setPlantList(filtered);
   })
@@ -3369,6 +3373,7 @@ function GateKeeper() {
     toast.error('Failed to fetch plant list');
   });
 }, []);
+
 
   useEffect(() => {
     if (!selectedPlant) return;
