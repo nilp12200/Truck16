@@ -3501,31 +3501,35 @@ function GateKeeper() {
   const [checkedInTrucks, setCheckedInTrucks] = useState([]);
   const [quantityPanels, setQuantityPanels] = useState([]);
 
-  useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    const role = localStorage.getItem('role');
-    const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
-    const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
+ useEffect(() => {
+  const userId = localStorage.getItem('userId');
+  const role = localStorage.getItem('role');
+  const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
+  const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
 
-    axios.get(`${API_URL}/api/plants`, {
-      headers: { userid: userId, role }
-    })
-    .then(res => {
-      if (role?.toLowerCase() === 'admin') {
-        setPlantList(res.data); // Admin: show all plants
-      } else {
-        const filtered = res.data.filter(plant => {
-          const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
-          return allowedPlants.includes(pid);
-        });
-        setPlantList(filtered); // Non-admin: show allowed plants only
-      }
-    })
-    .catch(err => {
-      console.error('❌ Error fetching plants:', err);
-      toast.error('Failed to fetch plant list');
-    });
-  }, []);
+  console.log('🌱 Role:', role, 'Allowed Plants:', allowedPlants);
+
+  axios.get(`${API_URL}/api/plants`, {
+    headers: { userid: userId, role }
+  })
+  .then(res => {
+    if (role?.toLowerCase() === 'admin') {
+      console.log('👑 Admin access - showing all plants');
+      setPlantList(res.data);
+    } else {
+      const filtered = res.data.filter(plant => {
+        const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
+        return allowedPlants.includes(pid);
+      });
+      setPlantList(filtered);
+    }
+  })
+  .catch(err => {
+    console.error('❌ Error fetching plants:', err);
+    toast.error('Failed to fetch plant list');
+  });
+}, []);
+
 
   useEffect(() => {
     if (!selectedPlant) return;
