@@ -1687,6 +1687,11 @@ function Navbar() {
                         </span>
                       </NavLink>
                     )}
+                  {canAccess('userregister') && (
++                     <NavLink to="/userregister" routeKey="userregister">
++                       <span className="block hover:text-yellow-400">📝 User Register</span>
++                     </NavLink>
++                   )}
                   </div>
                 )}
               </div>
