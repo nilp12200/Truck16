@@ -570,6 +570,231 @@
 // export default TruckTransaction;
 
 // *********************************
+// import React, { useEffect, useState } from 'react';
+// import axios from 'axios';
+// import { useNavigate, useLocation } from 'react-router-dom';
+// import './TruckTransaction.css';
+
+// const API_URL = import.meta.env.VITE_API_URL;
+
+// function TruckTransaction() {
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   const [formData, setFormData] = useState({
+//     truckNo: '', transactionDate: '', cityName: '', transporter: '',
+//     amountPerTon: '', truckWeight: '', deliverPoint: '', remarks: ''
+//   });
+
+//   const [plantList, setPlantList] = useState([]);
+//   const [tableData, setTableData] = useState([]);
+//   const [editingIndex, setEditingIndex] = useState(null);
+//   const [newRow, setNewRow] = useState({
+//     detailId: null, plantName: '', loadingSlipNo: '', qty: '',
+//     priority: '', remarks: '', freight: 'To Pay'
+//   });
+//   const [message, setMessage] = useState('');
+
+//   useEffect(() => {
+//     const truckNo = location?.state?.truck?.TruckNo;
+//     if (!truckNo) return;
+
+//     const fetchTruckDetails = async () => {
+//       try {
+//         const res = await axios.get(`${API_URL}/api/truck-transaction/${truckNo}`);
+//         const { master, details } = res.data;
+
+//         setFormData({
+//           truckNo: master.TruckNo || '',
+//           transactionDate: master.TransactionDate?.split('T')[0] || '',
+//           cityName: master.CityName || '',
+//           transporter: master.Transporter || '',
+//           amountPerTon: master.AmountPerTon || '',
+//           truckWeight: master.TruckWeight || '',
+//           deliverPoint: master.DeliverPoint || '',
+//           remarks: master.Remarks || ''
+//         });
+
+//         setTableData(details.map(row => ({
+//           detailId: row.TruckTransactionDetailsId,
+//           plantName: row.PlantName,
+//           loadingSlipNo: row.LoadingSlipNo,
+//           qty: row.Qty,
+//           priority: row.Priority,
+//           remarks: row.Remarks,
+//           freight: row.Freight
+//         })));
+//       } catch (err) {
+//         console.error('Error loading truck details:', err);
+//       }
+//     };
+
+//     fetchTruckDetails();
+//   }, [location?.state?.truck]);
+
+//   useEffect(() => {
+//     axios.get(`${API_URL}/api/plants`)
+//       .then(res => setPlantList(res.data))
+//       .catch(err => console.error('Error fetching plants:', err));
+//   }, []);
+
+//   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+//   const handleNewRowChange = (e) => setNewRow({ ...newRow, [e.target.name]: e.target.value });
+
+//   const addOrUpdateRow = () => {
+//     if (!newRow.plantName || !newRow.loadingSlipNo || !newRow.qty) return;
+
+//     if (editingIndex !== null) {
+//       const updated = [...tableData];
+//       updated[editingIndex] = { ...newRow };
+//       setTableData(updated);
+//       setEditingIndex(null);
+//     } else {
+//       setTableData([...tableData, { ...newRow, detailId: null }]);
+//     }
+
+//     setNewRow({
+//       detailId: null, plantName: '', loadingSlipNo: '', qty: '',
+//       priority: '', remarks: '', freight: 'To Pay'
+//     });
+//   };
+
+//   const handleEditRow = (idx) => {
+//     setNewRow({ ...tableData[idx] });
+//     setEditingIndex(idx);
+//   };
+
+//   const handleDeleteRow = (idx) => {
+//     const updated = tableData.filter((_, i) => i !== idx);
+//     setTableData(updated);
+//     setEditingIndex(null);
+//     setNewRow({
+//       detailId: null, plantName: '', loadingSlipNo: '', qty: '',
+//       priority: '', remarks: '', freight: 'To Pay'
+//     });
+//   };
+
+//   const handleSubmit = async () => {
+//     try {
+//       let dataToSubmit = [...tableData];
+//       const isNewRowFilled = Object.values(newRow).some(val => val && val.trim?.() !== '');
+
+//       if (isNewRowFilled) {
+//         dataToSubmit.push({ ...newRow, detailId: null });
+//       }
+
+//       const response = await axios.post(`${API_URL}/api/truck-transaction`, {
+//         formData,
+//         tableData: dataToSubmit
+//       });
+
+//       if (response.data.success) {
+//         setMessage('✅ Transaction saved successfully!');
+//         setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
+//         setTableData([]);
+//       } else {
+//         setMessage('❌ Error saving transaction.');
+//       }
+//     } catch (error) {
+//       console.error('Submit error:', error);
+//       setMessage('❌ Server error while submitting data.');
+//     }
+//   };
+
+//   return (
+//     <div className="truck-transaction-container">
+//       <div className="truck-transaction-card">
+//         <h1 className="truck-transaction-title">Truck Transaction</h1>
+
+//         <div className="truck-transaction-form-grid">
+//           {[{ label: 'Truck No', name: 'truckNo' },
+//             { label: 'Transaction Date', name: 'transactionDate', type: 'date' },
+//             { label: 'City Name', name: 'cityName' },
+//             { label: 'Transporter', name: 'transporter' }
+//           ].map(({ label, name, type = 'text' }) => (
+//             <div key={name}>
+//               <label className="truck-transaction-label">{label}</label>
+//               <input type={type} name={name} value={formData[name]} onChange={handleChange} className="truck-transaction-input" />
+//             </div>
+//           ))}
+//         </div>
+
+//         <table className="truck-transaction-table">
+//           <thead>
+//             <tr>
+//               <th>Plant</th><th>Slip No</th><th>Qty</th><th>Priority</th><th>Remarks</th><th>Freight</th><th>Actions</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {tableData.map((row, idx) => (
+//               <tr key={idx}>
+//                 <td>{row.plantName}</td>
+//                 <td>{row.loadingSlipNo}</td>
+//                 <td>{row.qty}</td>
+//                 <td>{row.priority}</td>
+//                 <td>{row.remarks}</td>
+//                 <td>{row.freight}</td>
+//                 <td>
+//                   <div className="truck-transaction-action-group">
+//                     <button className="truck-transaction-btn edit" onClick={() => handleEditRow(idx)}>Edit</button>
+//                     <button className="truck-transaction-btn delete" onClick={() => handleDeleteRow(idx)}>Delete</button>
+//                   </div>
+//                 </td>
+//               </tr>
+//             ))}
+//             <tr>
+//               <td>
+//                 <select name="plantName" value={newRow.plantName} onChange={handleNewRowChange} className="truck-transaction-select">
+//                   <option value="">Select</option>
+//                   {plantList.map((p, i) => (
+//                     <option key={i} value={p.PlantName}>{p.PlantName}</option>
+//                   ))}
+//                 </select>
+//               </td>
+//               {["loadingSlipNo", "qty", "priority", "remarks"].map((name) => (
+//                 <td key={name}>
+//                   <input name={name} value={newRow[name]} onChange={handleNewRowChange} className="truck-transaction-input" />
+//                 </td>
+//               ))}
+//               <td>
+//                 <select name="freight" value={newRow.freight} onChange={handleNewRowChange} className="truck-transaction-select">
+//                   <option value="To Pay">To Pay</option>
+//                   <option value="Paid">Paid</option>
+//                 </select>
+//               </td>
+//               <td></td>
+//             </tr>
+//           </tbody>
+//         </table>
+
+//         <button className="truck-transaction-btn edit" onClick={addOrUpdateRow}>
+//           {editingIndex !== null ? 'Update Row' : 'Add Row'}
+//         </button>
+
+//         <div className="truck-transaction-form-grid">
+//           {[{ label: 'Amount Per Ton', name: 'amountPerTon' },
+//             { label: 'Deliver Point', name: 'deliverPoint' },
+//             { label: 'Truck Weight (In Ton)', name: 'truckWeight' }
+//           ].map(({ label, name }) => (
+//             <div key={name}>
+//               <label className="truck-transaction-label">{label}</label>
+//               <input name={name} value={formData[name]} onChange={handleChange} className="truck-transaction-input" />
+//             </div>
+//           ))}
+//         </div>
+
+//         <label className="truck-transaction-label">Remarks</label>
+//         <textarea name="remarks" value={formData.remarks} onChange={handleChange} rows="3" className="truck-transaction-textarea" />
+
+//         <button className="truck-transaction-btn edit" onClick={handleSubmit}>Submit</button>
+//         {message && <p className="truck-transaction-message">{message}</p>}
+//       </div>
+//     </div>
+//   );
+// }
+
+// export default TruckTransaction;
+// // ***************************************************
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -582,6 +807,7 @@ function TruckTransaction() {
   const location = useLocation();
 
   const [formData, setFormData] = useState({
+    transactionId: null,
     truckNo: '', transactionDate: '', cityName: '', transporter: '',
     amountPerTon: '', truckWeight: '', deliverPoint: '', remarks: ''
   });
@@ -595,6 +821,7 @@ function TruckTransaction() {
   });
   const [message, setMessage] = useState('');
 
+  // Load data if editing
   useEffect(() => {
     const truckNo = location?.state?.truck?.TruckNo;
     if (!truckNo) return;
@@ -605,6 +832,7 @@ function TruckTransaction() {
         const { master, details } = res.data;
 
         setFormData({
+          transactionId: master.TransactionId,
           truckNo: master.TruckNo || '',
           transactionDate: master.TransactionDate?.split('T')[0] || '',
           cityName: master.CityName || '',
@@ -632,6 +860,7 @@ function TruckTransaction() {
     fetchTruckDetails();
   }, [location?.state?.truck]);
 
+  // Load plants
   useEffect(() => {
     axios.get(`${API_URL}/api/plants`)
       .then(res => setPlantList(res.data))
@@ -690,8 +919,13 @@ function TruckTransaction() {
 
       if (response.data.success) {
         setMessage('✅ Transaction saved successfully!');
-        setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
+        setFormData({
+          transactionId: null, truckNo: '', transactionDate: '', cityName: '', transporter: '',
+          amountPerTon: '', truckWeight: '', deliverPoint: '', remarks: ''
+        });
         setTableData([]);
+        setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
+        setEditingIndex(null);
       } else {
         setMessage('❌ Error saving transaction.');
       }
@@ -701,13 +935,34 @@ function TruckTransaction() {
     }
   };
 
+  const handleDeleteTransaction = async () => {
+    if (!formData.transactionId) return;
+
+    const confirmed = window.confirm("Are you sure you want to delete this transaction?");
+    if (!confirmed) return;
+
+    try {
+      const res = await axios.delete(`${API_URL}/api/truck-transaction/${formData.transactionId}`);
+      if (res.data.success) {
+        setMessage("✅ Transaction deleted.");
+        navigate('/transactions'); // or reset state
+      } else {
+        setMessage("❌ Failed to delete transaction.");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      setMessage("❌ Error deleting transaction.");
+    }
+  };
+
   return (
     <div className="truck-transaction-container">
       <div className="truck-transaction-card">
         <h1 className="truck-transaction-title">Truck Transaction</h1>
 
         <div className="truck-transaction-form-grid">
-          {[{ label: 'Truck No', name: 'truckNo' },
+          {[
+            { label: 'Truck No', name: 'truckNo' },
             { label: 'Transaction Date', name: 'transactionDate', type: 'date' },
             { label: 'City Name', name: 'cityName' },
             { label: 'Transporter', name: 'transporter' }
@@ -772,7 +1027,8 @@ function TruckTransaction() {
         </button>
 
         <div className="truck-transaction-form-grid">
-          {[{ label: 'Amount Per Ton', name: 'amountPerTon' },
+          {[
+            { label: 'Amount Per Ton', name: 'amountPerTon' },
             { label: 'Deliver Point', name: 'deliverPoint' },
             { label: 'Truck Weight (In Ton)', name: 'truckWeight' }
           ].map(({ label, name }) => (
@@ -786,7 +1042,13 @@ function TruckTransaction() {
         <label className="truck-transaction-label">Remarks</label>
         <textarea name="remarks" value={formData.remarks} onChange={handleChange} rows="3" className="truck-transaction-textarea" />
 
-        <button className="truck-transaction-btn edit" onClick={handleSubmit}>Submit</button>
+        <div className="truck-transaction-actions">
+          <button className="truck-transaction-btn edit" onClick={handleSubmit}>Submit</button>
+          {formData.transactionId && (
+            <button className="truck-transaction-btn delete" onClick={handleDeleteTransaction}>Delete Transaction</button>
+          )}
+        </div>
+
         {message && <p className="truck-transaction-message">{message}</p>}
       </div>
     </div>
@@ -794,4 +1056,3 @@ function TruckTransaction() {
 }
 
 export default TruckTransaction;
-
