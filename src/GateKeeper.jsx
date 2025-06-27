@@ -3513,7 +3513,7 @@ function GateKeeper() {
     headers: { userid: userId, role }
   })
   .then(res => {
-    if (role?.toLowerCase() === 'admin') {
+    if (role?.toLowerCase() === 'Admin') {
       console.log('👑 Admin access - showing all plants');
       setPlantList(res.data);
     } else {
