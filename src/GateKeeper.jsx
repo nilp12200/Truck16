@@ -3317,9 +3317,32 @@ function GateKeeper() {
   //     toast.error('Failed to fetch plant list');
   //   });
   // }, []);
+//   useEffect(() => {
+//   const userId = localStorage.getItem('userId');
+//   const role = localStorage.getItem('role') || localStorage.getItem('userRole') || '';
+//   const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
+//   const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
+
+//   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+//   axios.get(`${API_URL}/api/plants`, {
+//     headers: { userid: userId, role }
+//   })
+//   .then(res => {
+//     const filtered = res.data.filter(plant => {
+//       const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
+//       return allowedPlants.includes(pid) || role?.toLowerCase() === 'admin';
+//     });
+//     setPlantList(filtered);
+//   })
+//   .catch(err => {
+//     console.error('❌ Error fetching plants:', err);
+//     toast.error('Failed to fetch plant list');
+//   });
+// }, []);
   useEffect(() => {
   const userId = localStorage.getItem('userId');
-  const role = localStorage.getItem('role') || localStorage.getItem('userRole') || '';
+  const role = (localStorage.getItem('role') || '').toLowerCase();
   const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
   const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
 
@@ -3330,9 +3353,15 @@ function GateKeeper() {
   })
   .then(res => {
     const filtered = res.data.filter(plant => {
-      const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
-      return allowedPlants.includes(pid) || role?.toLowerCase() === 'admin';
+      const pid = String(plant.PlantID || plant.PlantId || plant.plantid || plant.id || '');
+      
+      // ✅ Admin: show all plants
+      if (role === 'admin') return true;
+
+      // ✅ GateKeeper and others: only show allowed plants
+      return allowedPlants.includes(pid);
     });
+
     setPlantList(filtered);
   })
   .catch(err => {
@@ -3340,6 +3369,7 @@ function GateKeeper() {
     toast.error('Failed to fetch plant list');
   });
 }, []);
+
   
   useEffect(() => {
     if (!selectedPlant) return;
