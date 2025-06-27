@@ -3317,29 +3317,6 @@ function GateKeeper() {
   //     toast.error('Failed to fetch plant list');
   //   });
   // }, []);
-//   useEffect(() => {
-//   const userId = localStorage.getItem('userId');
-//   const role = localStorage.getItem('role') || localStorage.getItem('userRole') || '';
-//   const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
-//   const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
-
-//   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-//   axios.get(`${API_URL}/api/plants`, {
-//     headers: { userid: userId, role }
-//   })
-//   .then(res => {
-//     const filtered = res.data.filter(plant => {
-//       const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
-//       return allowedPlants.includes(pid) || role?.toLowerCase() === 'admin';
-//     });
-//     setPlantList(filtered);
-//   })
-//   .catch(err => {
-//     console.error('❌ Error fetching plants:', err);
-//     toast.error('Failed to fetch plant list');
-//   });
-// }, []);
   useEffect(() => {
   const userId = localStorage.getItem('userId');
   const role = localStorage.getItem('role') || localStorage.getItem('userRole') || '';
@@ -3347,53 +3324,23 @@ function GateKeeper() {
   const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-  
-  console.log('🔍 Debug Info:', {
-    userId,
-    role,
-    allowedPlants,
-    API_URL
-  });
 
   axios.get(`${API_URL}/api/plants`, {
-    headers: { 
-      userid: userId, 
-      role,
-      'Content-Type': 'application/json'
-    }
+    headers: { userid: userId, role }
   })
   .then(res => {
-    console.log('✅ API Response:', res.data);
-    
-    // Check if user has admin role
-    const isAdmin = role.toLowerCase().includes('admin') || role.toLowerCase().includes('owner');
-    
-    if (isAdmin) {
-      // Admin users can access all plants
-      console.log('👑 Admin user - showing all plants:', res.data);
-      setPlantList(res.data);
-    } else {
-      // Regular users are filtered by allowed plants
-      const filtered = res.data.filter(plant => {
-        const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
-        return allowedPlants.includes(pid);
-      });
-      console.log('👤 Regular user - allowed plants:', allowedPlants);
-      console.log('�� Filtered plants:', filtered);
-      setPlantList(filtered);
-    }
+    const filtered = res.data.filter(plant => {
+      const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
+      return allowedPlants.includes(pid) || role?.toLowerCase() === 'admin';
+    });
+    setPlantList(filtered);
   })
   .catch(err => {
     console.error('❌ Error fetching plants:', err);
-    console.error('❌ Error details:', {
-      message: err.message,
-      status: err.response?.status,
-      data: err.response?.data,
-      config: err.config
-    });
-    toast.error(`Failed to fetch plant list: ${err.response?.status || err.message}`);
+    toast.error('Failed to fetch plant list');
   });
 }, []);
+  
   useEffect(() => {
     if (!selectedPlant) return;
     axios.get(`${API_URL}/api/trucks?plantName=${selectedPlant}`)
