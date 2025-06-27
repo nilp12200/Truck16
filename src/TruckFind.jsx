@@ -299,13 +299,14 @@ export default function TruckFind() {
                   <th className="px-3 py-2 border border-gray-400">TRUCK NO</th>
                   <th className="px-3 py-2 border border-gray-400">TRANSACTION DATE</th>
                   <th className="px-3 py-2 border border-gray-400">CITY NAME</th>
+                  <th className="px-3 py-2 border border-gray-400">TRANSPORTER NAME</th>
                   <th className="px-3 py-2 border border-gray-400">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {truckData.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-6 text-gray-500">
+                    <td colSpan={5} className="text-center py-6 text-gray-500">
                       No truck data available
                     </td>
                   </tr>
@@ -317,6 +318,7 @@ export default function TruckFind() {
                         {truck.transactiondate ? new Date(truck.transactiondate).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-3 py-2 border border-gray-300 text-green-700 font-semibold">{truck.cityname || '—'}</td>
+                      <td className="px-3 py-2 border border-gray-300 text-purple-700 font-semibold">{truck.transportername || '—'}</td>
                       <td className="px-3 py-2 border border-gray-300 text-center">
                         <button
                           className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-1 px-3 rounded mr-2 transition-all duration-200"
