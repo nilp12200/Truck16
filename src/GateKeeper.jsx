@@ -3356,7 +3356,7 @@ function GateKeeper() {
       const pid = String(plant.PlantID || plant.PlantId || plant.plantid || plant.id || '');
       
       // ✅ Admin: show all plants
-      if (role === 'admin') return true;
+      if (role === 'Admin') return true;
 
       // ✅ GateKeeper and others: only show allowed plants
       return allowedPlants.includes(pid);
