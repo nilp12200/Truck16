@@ -240,11 +240,12 @@ import PlantMaster from './PlantMaster';
 import Reports from './Report';
 import UserMaster from './UserMaster';
 import TruckFind from './TruckFind.jsx';
+import UserRegister from './UserRegister.jsx';
 
 // Role-based access control
 const roleAccess = {
-  owner: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'staff'],
-  admin: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'staff'],
+  owner: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'staff','userregister'],
+  admin: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'staff','userregister'],
   dispatch: ['truck', 'truckfind'],
   gatekeeper: ['gate'],
   report: ['reports'],
@@ -293,6 +294,7 @@ function Layout() {
         <Route path="/plantmaster" element={<ProtectedRoute element={PlantMaster} requiredRoute="plantmaster" />} />
         <Route path="/reports" element={<ProtectedRoute element={Reports} requiredRoute="reports" />} />
         <Route path="/usermaster" element={<ProtectedRoute element={UserMaster} requiredRoute="usermaster" />} />
+        <Route path="/userregister" element={<ProtectedRoute element={UserRegister} requiredRoute="userregister" />} />
 
         {/* Wildcard: authenticated users go to home; unauthenticated go to login */}
         <Route
