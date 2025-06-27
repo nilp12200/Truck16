@@ -3502,36 +3502,34 @@ function GateKeeper() {
   const [quantityPanels, setQuantityPanels] = useState([]);
 
 useEffect(() => {
-  const userId = localStorage.getItem('userId');
-  const role = localStorage.getItem('role'); // Expecting exact case like "Admin"
-  const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
-  const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
+  axios.get(`${API_URL}/api/plants`)
+    .then(res => {
+      const userRole = (localStorage.getItem('role') || '').toLowerCase();
+      const isAdmin = userRole === 'admin' || userRole === 'owner';
 
-  console.log('👤 Role:', role);
-  console.log('✅ Allowed Plants:', allowedPlants);
+      if (isAdmin) {
+        // ✅ Admins see all plants
+        console.log('✅ Admin user - showing all plants:', res.data);
+        setPlantList(res.data);
+      } else {
+        // 👤 Non-admins see only allowed plants
+        const allowed = (localStorage.getItem('allowedPlants') || '')
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean);
 
-  axios.get(`${API_URL}/api/plants`, {
-    headers: { userid: userId, role }
-  })
-  .then(res => {
-    if (role === 'Admin') {
-      // Admin sees all plants
-      console.log('👑 Admin detected — showing all plants');
-      setPlantList(res.data);
-    } else {
-      // Other users see only allowed plants
-      const filtered = res.data.filter(plant => {
-        const plantId = String(plant.PlantID || plant.PlantId || plant.plantid || '');
-        return allowedPlants.includes(plantId);
-      });
-      console.log('🙋 Filtered view for non-admin user');
-      setPlantList(filtered);
-    }
-  })
-  .catch(err => {
-    console.error('❌ Error fetching plants:', err);
-    toast.error('Failed to fetch plant list');
-  });
+        const filtered = res.data.filter(plant =>
+          allowed.includes(String(plant.PlantID))
+        );
+
+        console.log('🙋 Non-admin - allowed:', allowed);
+        console.log('🌱 Filtered plants:', filtered);
+        setPlantList(filtered);
+      }
+    })
+    .catch(err => {
+      console.error('❌ Error fetching plants:', err);
+    });
 }, []);
 
 
