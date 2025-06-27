@@ -3296,27 +3296,50 @@ function GateKeeper() {
   const [checkedInTrucks, setCheckedInTrucks] = useState([]);
   const [quantityPanels, setQuantityPanels] = useState([]);
 
-  useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    const role = localStorage.getItem('role');
-    const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
-    const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
+  // useEffect(() => {
+  //   const userId = localStorage.getItem('userId');
+  //   const role = localStorage.getItem('role');
+  //   const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
+  //   const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
 
-    axios.get(`${API_URL}/api/plants`, {
-      headers: { userid: userId, role }
-    })
-    .then(res => {
-      const filtered = res.data.filter(plant => {
-        const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
-        return allowedPlants.includes(pid) || role?.toLowerCase() === 'admin';
-      });
-      setPlantList(filtered);
-    })
-    .catch(err => {
-      console.error('❌ Error fetching plants:', err);
-      toast.error('Failed to fetch plant list');
+  //   axios.get(`${API_URL}/api/plants`, {
+  //     headers: { userid: userId, role }
+  //   })
+  //   .then(res => {
+  //     const filtered = res.data.filter(plant => {
+  //       const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
+  //       return allowedPlants.includes(pid) || role?.toLowerCase() === 'admin';
+  //     });
+  //     setPlantList(filtered);
+  //   })
+  //   .catch(err => {
+  //     console.error('❌ Error fetching plants:', err);
+  //     toast.error('Failed to fetch plant list');
+  //   });
+  // }, []);
+  useEffect(() => {
+  const userId = localStorage.getItem('userId');
+  const role = localStorage.getItem('role') || localStorage.getItem('userRole') || '';
+  const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
+  const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+  axios.get(`${API_URL}/api/plants`, {
+    headers: { userid: userId, role }
+  })
+  .then(res => {
+    const filtered = res.data.filter(plant => {
+      const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
+      return allowedPlants.includes(pid) || role?.toLowerCase() === 'admin';
     });
-  }, []);
+    setPlantList(filtered);
+  })
+  .catch(err => {
+    console.error('❌ Error fetching plants:', err);
+    toast.error('Failed to fetch plant list');
+  });
+}, []);
 
   useEffect(() => {
     if (!selectedPlant) return;
