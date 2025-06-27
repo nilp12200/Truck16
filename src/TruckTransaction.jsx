@@ -975,7 +975,7 @@ function TruckTransaction() {
   return (
     <div className="p-4 md:p-10 bg-gray-100 min-h-screen">
       <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <CancelButton />
+
         <h1 className="text-2xl font-bold text-center mb-6">Truck Transaction</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
