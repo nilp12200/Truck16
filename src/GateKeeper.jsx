@@ -3343,23 +3343,23 @@ function GateKeeper() {
 useEffect(() => {
   const userId = localStorage.getItem('userId');
   const rawRole = localStorage.getItem('role') || localStorage.getItem('userRole') || '';
-  const role = rawRole.toLowerCase(); // 🔥 Normalize role
+  const role = rawRole.toLowerCase(); // convert to lowercase for logic
   const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
   const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   axios.get(`${API_URL}/api/plants`, {
-    headers: { userid: userId, role: rawRole } // use original casing for headers if needed
+    headers: { userid: userId, role: rawRole } // original role if backend cares
   })
   .then(res => {
     let filtered = [];
 
-    // ✅ If Admin, show all plants
     if (role === 'admin') {
+      // ✅ Admins get full plant list
       filtered = res.data;
     } else {
-      // ✅ Otherwise, filter only allowedPlants
+      // ✅ Non-admins only get allowed plants
       filtered = res.data.filter(plant => {
         const pid = String(plant.PlantID || plant.PlantId || plant.plantid || plant.id || '');
         return allowedPlants.includes(pid);
