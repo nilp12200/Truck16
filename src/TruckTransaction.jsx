@@ -805,6 +805,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 function TruckTransaction() {
   const navigate = useNavigate();
   const location = useLocation();
+  const truckNo = location?.state?.truck?.TruckNo;
 
   const [formData, setFormData] = useState({
     transactionId: null,
@@ -820,10 +821,17 @@ function TruckTransaction() {
     priority: '', remarks: '', freight: 'To Pay'
   });
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // Load data if editing
+  // Redirect if truckNo is not provided
   useEffect(() => {
-    const truckNo = location?.state?.truck?.TruckNo;
+    if (!truckNo) {
+      navigate('/transactions', { replace: true });
+    }
+  }, [truckNo, navigate]);
+
+  // Load truck details
+  useEffect(() => {
     if (!truckNo) return;
 
     const fetchTruckDetails = async () => {
@@ -852,15 +860,19 @@ function TruckTransaction() {
           remarks: row.Remarks,
           freight: row.Freight
         })));
+
       } catch (err) {
         console.error('Error loading truck details:', err);
+        setMessage('❌ Error loading truck details.');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchTruckDetails();
-  }, [location?.state?.truck]);
+  }, [truckNo]);
 
-  // Load plants
+  // Load plant list
   useEffect(() => {
     axios.get(`${API_URL}/api/plants`)
       .then(res => setPlantList(res.data))
@@ -945,7 +957,7 @@ function TruckTransaction() {
       const res = await axios.delete(`${API_URL}/api/truck-transaction/${formData.transactionId}`);
       if (res.data.success) {
         setMessage("✅ Transaction deleted.");
-        navigate('/transactions'); // or reset state
+        navigate('/transactions');
       } else {
         setMessage("❌ Failed to delete transaction.");
       }
@@ -955,23 +967,22 @@ function TruckTransaction() {
     }
   };
 
+  if (loading) return <div className="truck-transaction-container"><p>Loading...</p></div>;
+
   return (
     <div className="truck-transaction-container">
       <div className="truck-transaction-card">
         <h1 className="truck-transaction-title">Truck Transaction</h1>
 
         <div className="truck-transaction-form-grid">
-          {[
-            { label: 'Truck No', name: 'truckNo' },
-            { label: 'Transaction Date', name: 'transactionDate', type: 'date' },
-            { label: 'City Name', name: 'cityName' },
-            { label: 'Transporter', name: 'transporter' }
-          ].map(({ label, name, type = 'text' }) => (
-            <div key={name}>
-              <label className="truck-transaction-label">{label}</label>
-              <input type={type} name={name} value={formData[name]} onChange={handleChange} className="truck-transaction-input" />
-            </div>
-          ))}
+          {[{ label: 'Truck No', name: 'truckNo' }, { label: 'Transaction Date', name: 'transactionDate', type: 'date' },
+            { label: 'City Name', name: 'cityName' }, { label: 'Transporter', name: 'transporter' }]
+            .map(({ label, name, type = 'text' }) => (
+              <div key={name}>
+                <label className="truck-transaction-label">{label}</label>
+                <input type={type} name={name} value={formData[name]} onChange={handleChange} className="truck-transaction-input" />
+              </div>
+            ))}
         </div>
 
         <table className="truck-transaction-table">
@@ -1027,16 +1038,15 @@ function TruckTransaction() {
         </button>
 
         <div className="truck-transaction-form-grid">
-          {[
-            { label: 'Amount Per Ton', name: 'amountPerTon' },
+          {[{ label: 'Amount Per Ton', name: 'amountPerTon' },
             { label: 'Deliver Point', name: 'deliverPoint' },
-            { label: 'Truck Weight (In Ton)', name: 'truckWeight' }
-          ].map(({ label, name }) => (
-            <div key={name}>
-              <label className="truck-transaction-label">{label}</label>
-              <input name={name} value={formData[name]} onChange={handleChange} className="truck-transaction-input" />
-            </div>
-          ))}
+            { label: 'Truck Weight (In Ton)', name: 'truckWeight' }]
+            .map(({ label, name }) => (
+              <div key={name}>
+                <label className="truck-transaction-label">{label}</label>
+                <input name={name} value={formData[name]} onChange={handleChange} className="truck-transaction-input" />
+              </div>
+            ))}
         </div>
 
         <label className="truck-transaction-label">Remarks</label>
@@ -1056,3 +1066,4 @@ function TruckTransaction() {
 }
 
 export default TruckTransaction;
+
