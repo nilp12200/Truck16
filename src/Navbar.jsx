@@ -1619,10 +1619,9 @@ function Navbar() {
     window.location.href = "/";
   };
 
-  // Match roles exactly as stored in DB/localStorage
   const roleAccess = {
-    Owner: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'truckfind'],
-    Admin: ['plantmaster', 'usermaster', 'truck', 'gate', 'loader', 'reports', 'truckfind'],
+    Owner: ['plantmaster', 'usermaster', 'userregister', 'truck', 'gate', 'loader', 'reports', 'truckfind'],
+    Admin: ['plantmaster', 'usermaster', 'userregister', 'truck', 'gate', 'loader', 'reports', 'truckfind'],
     Dispatch: ['truck', 'truckfind'],
     GateKeeper: ['gate'],
     Report: ['reports'],
@@ -1631,15 +1630,16 @@ function Navbar() {
 
   const canAccess = (route) => {
     if (!userRole) return false;
-    const roles = userRole.split(',').map(r => r.trim()); // no toLowerCase()
+    const roles = userRole.split(',').map(r => r.trim());
     return roles.some(role => roleAccess[role]?.includes(route));
   };
 
-  const NavLink = ({ to, routeKey, children, ...props }) => (
-    <Link to={to} {...props}>{children}</Link>
+  const NavLink = ({ to, children }) => (
+    <Link to={to} className="block px-6 py-3 text-white hover:bg-yellow-400 hover:text-gray-900">
+      {children}
+    </Link>
   );
 
-  // Hide navbar on login page
   if (location.pathname === '/') return null;
 
   return (
@@ -1660,7 +1660,7 @@ function Navbar() {
           </div>
 
           <div className="hidden md:flex space-x-8 items-center font-medium text-white">
-            {(canAccess('plantmaster') || canAccess('usermaster')) && (
+            {(canAccess('plantmaster') || canAccess('usermaster') || canAccess('userregister')) && (
               <div className="relative">
                 <button
                   onClick={() => {
@@ -1673,25 +1673,9 @@ function Navbar() {
                 </button>
                 {adminOpen && (
                   <div className="absolute mt-2 w-56 bg-gray-800 rounded-xl shadow-2xl z-50 py-2 border border-gray-700">
-                    {canAccess('plantmaster') && (
-                      <NavLink to="/plantmaster" routeKey="plantmaster">
-                        <span className="block px-6 py-3 text-white hover:bg-yellow-400 hover:text-gray-900">
-                          🏭 Plant Master
-                        </span>
-                      </NavLink>
-                    )}
-                    {canAccess('usermaster') && (
-                      <NavLink to="/usermaster" routeKey="usermaster">
-                        <span className="block px-6 py-3 text-white hover:bg-yellow-400 hover:text-gray-900">
-                          👤 User Master
-                        </span>
-                      </NavLink>
-                    )}
-                  {canAccess('userregister') && (
-+                     <NavLink to="/userregister" routeKey="userregister">
-+                       <span className="block hover:text-yellow-400">📝 User Register</span>
-+                     </NavLink>
-+                   )}
+                    {canAccess('plantmaster') && <NavLink to="/plantmaster">🏭 Plant Master</NavLink>}
+                    {canAccess('usermaster') && <NavLink to="/usermaster">👤 User Master</NavLink>}
+                    {canAccess('userregister') && <NavLink to="/userregister">📝 User Register</NavLink>}
                   </div>
                 )}
               </div>
@@ -1710,40 +1694,16 @@ function Navbar() {
                 </button>
                 {dispatcherOpen && (
                   <div className="absolute mt-2 w-56 bg-gray-800 rounded-xl shadow-2xl z-50 py-2 border border-gray-700">
-                    {canAccess('truck') && (
-                      <NavLink to="/truck" routeKey="truck">
-                        <span className="block px-6 py-3 text-white hover:bg-yellow-400 hover:text-gray-900">
-                          🚛 Truck Transaction
-                        </span>
-                      </NavLink>
-                    )}
-                    {canAccess('truckfind') && (
-                      <NavLink to="/truckfind" routeKey="truckfind">
-                        <span className="block px-6 py-3 text-white hover:bg-yellow-400 hover:text-gray-900">
-                          🔍 Truck Transaction Find
-                        </span>
-                      </NavLink>
-                    )}
+                    {canAccess('truck') && <NavLink to="/truck">🚛 Truck Transaction</NavLink>}
+                    {canAccess('truckfind') && <NavLink to="/truckfind">🔍 Truck Transaction Find</NavLink>}
                   </div>
                 )}
               </div>
             )}
 
-            {canAccess('gate') && (
-              <NavLink to="/gate" routeKey="gate">
-                <span className="hover:text-yellow-400 transition-all flex items-center">🚪 Gate Keeper</span>
-              </NavLink>
-            )}
-            {canAccess('loader') && (
-              <NavLink to="/loader" routeKey="loader">
-                <span className="hover:text-yellow-400 flex items-center">📦 Loader</span>
-              </NavLink>
-            )}
-            {canAccess('reports') && (
-              <NavLink to="/reports" routeKey="reports">
-                <span className="hover:text-yellow-400 transition-all flex items-center">📊 Reports</span>
-              </NavLink>
-            )}
+            {canAccess('gate') && <NavLink to="/gate">🚪 Gate Keeper</NavLink>}
+            {canAccess('loader') && <NavLink to="/loader">📦 Loader</NavLink>}
+            {canAccess('reports') && <NavLink to="/reports">📊 Reports</NavLink>}
 
             <button
               onClick={handleLogout}
@@ -1754,10 +1714,9 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Mobile menu */}
         {mobileMenuOpen && (
           <div className="md:hidden mt-2 space-y-2 bg-gray-800 p-6 rounded-xl shadow-2xl text-white font-medium z-50 border border-gray-700">
-            {(canAccess('plantmaster') || canAccess('usermaster')) && (
+            {(canAccess('plantmaster') || canAccess('usermaster') || canAccess('userregister')) && (
               <div>
                 <button
                   onClick={() => {
@@ -1770,16 +1729,9 @@ function Navbar() {
                 </button>
                 {adminOpen && (
                   <div className="pl-6 space-y-2 mt-2">
-                    {canAccess('plantmaster') && (
-                      <NavLink to="/plantmaster" routeKey="plantmaster">
-                        <span className="block hover:text-yellow-400">🏭 Plant Master</span>
-                      </NavLink>
-                    )}
-                    {canAccess('usermaster') && (
-                      <NavLink to="/usermaster" routeKey="usermaster">
-                        <span className="block hover:text-yellow-400">👤 User Master</span>
-                      </NavLink>
-                    )}
+                    {canAccess('plantmaster') && <NavLink to="/plantmaster">🏭 Plant Master</NavLink>}
+                    {canAccess('usermaster') && <NavLink to="/usermaster">👤 User Master</NavLink>}
+                    {canAccess('userregister') && <NavLink to="/userregister">📝 User Register</NavLink>}
                   </div>
                 )}
               </div>
@@ -1798,36 +1750,16 @@ function Navbar() {
                 </button>
                 {dispatcherOpen && (
                   <div className="pl-6 space-y-2 mt-2">
-                    {canAccess('truck') && (
-                      <NavLink to="/truck" routeKey="truck">
-                        <span className="block hover:text-yellow-400">📝 Truck Transaction</span>
-                      </NavLink>
-                    )}
-                    {canAccess('truckfind') && (
-                      <NavLink to="/truckfind" routeKey="truckfind">
-                        <span className="block hover:text-yellow-400">🔍 Truck Find</span>
-                      </NavLink>
-                    )}
+                    {canAccess('truck') && <NavLink to="/truck">📝 Truck Transaction</NavLink>}
+                    {canAccess('truckfind') && <NavLink to="/truckfind">🔍 Truck Find</NavLink>}
                   </div>
                 )}
               </div>
             )}
 
-            {canAccess('gate') && (
-              <NavLink to="/gate" routeKey="gate" className="block hover:text-yellow-400">
-                🚪 Gate Keeper
-              </NavLink>
-            )}
-            {canAccess('loader') && (
-              <NavLink to="/loader" routeKey="loader" className="block hover:text-yellow-400">
-                📦 Loader
-              </NavLink>
-            )}
-            {canAccess('reports') && (
-              <NavLink to="/reports" routeKey="reports" className="block hover:text-yellow-400">
-                📊 Reports
-              </NavLink>
-            )}
+            {canAccess('gate') && <NavLink to="/gate">🚪 Gate Keeper</NavLink>}
+            {canAccess('loader') && <NavLink to="/loader">📦 Loader</NavLink>}
+            {canAccess('reports') && <NavLink to="/reports">📊 Reports</NavLink>}
 
             <button
               onClick={handleLogout}
