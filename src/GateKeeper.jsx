@@ -3504,25 +3504,31 @@ function GateKeeper() {
 useEffect(() => {
   axios.get(`${API_URL}/api/plants`)
     .then(res => {
-      const userRole = (localStorage.getItem('role') || '').toLowerCase();
-      const isAdmin = userRole === 'admin' || userRole === 'owner';
+      const plants = res.data;
+      const userRole = localStorage.getItem('role') || ''; // Keep case-sensitive
+      const isAdmin = userRole === 'Admin' || userRole === 'Owner'; // Match exact case
+
+      if (!Array.isArray(plants)) {
+        console.error('❌ Invalid plant data:', plants);
+        return;
+      }
 
       if (isAdmin) {
         // ✅ Admins see all plants
-        console.log('✅ Admin user - showing all plants:', res.data);
-        setPlantList(res.data);
+        console.log('✅ Admin - showing all plants:', plants);
+        setPlantList(plants);
       } else {
         // 👤 Non-admins see only allowed plants
-        const allowed = (localStorage.getItem('allowedPlants') || '')
+        const allowedPlants = (localStorage.getItem('allowedPlants') || '')
           .split(',')
-          .map(id => id.trim())
+          .map(p => p.trim())
           .filter(Boolean);
 
-        const filtered = res.data.filter(plant =>
-          allowed.includes(String(plant.PlantID))
+        const filtered = plants.filter(p =>
+          allowedPlants.includes(String(p.PlantID))
         );
 
-        console.log('🙋 Non-admin - allowed:', allowed);
+        console.log('🙋 Non-admin - allowed:', allowedPlants);
         console.log('🌱 Filtered plants:', filtered);
         setPlantList(filtered);
       }
@@ -3531,6 +3537,7 @@ useEffect(() => {
       console.error('❌ Error fetching plants:', err);
     });
 }, []);
+
 
 
   useEffect(() => {
