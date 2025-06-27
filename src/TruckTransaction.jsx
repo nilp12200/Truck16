@@ -801,7 +801,7 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function TruckTransaction() {
+export default function Truck() {
   const location = useLocation();
   const navigate = useNavigate();
   const truck = location.state?.truck;
