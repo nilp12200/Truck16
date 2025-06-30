@@ -254,7 +254,7 @@
 // export default UserRegister;
 import React, { useEffect, useState } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL; // Ensure this is set to your backend URL
+const API_URL = import.meta.env.VITE_API_URL;
 
 const iconEdit = (
   <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
@@ -309,26 +309,30 @@ const UserRegister = () => {
       const response = await fetch(`${API_URL}/api/plant-master`);
       if (!response.ok) throw new Error('Failed to fetch plant data');
       const data = await response.json();
-      setPlants(data);
+      setPlants(data); // Save plant data (with PlantId and PlantName)
     } catch (err) {
       console.error('Error fetching plants:', err);
       setError('Could not load plant data.');
     }
   };
 
-  const getPlantName = (plantId) => {
+  // Get plant names based on AllowedPlant field (comma-separated PlantIds)
+  const getPlantName = (plantIds) => {
     if (plants.length === 0) {
       console.warn('No plant data available');
       return 'No Plant Data';
     }
 
-    const plantIds = plantId.split(',');
-    const plantNames = plantIds.map(id => {
-      const plant = plants.find(p => p.PlantId === Number(id.trim()));
-      return plant ? plant.PlantName : `Unknown Plant ${id.trim()}`;
+    // Split the AllowedPlant field (comma-separated PlantIds)
+    const plantIdArray = plantIds.split(',');
+
+    // Map the PlantIds to their corresponding PlantNames
+    const plantNames = plantIdArray.map(id => {
+      const plant = plants.find(p => p.PlantId === Number(id.trim())); // Find the plant by ID
+      return plant ? plant.PlantName : `Unknown Plant ${id.trim()}`; // Return the name or "Unknown Plant"
     });
 
-    return plantNames.join(', ');
+    return plantNames.join(', '); // Join multiple names with commas
   };
 
   const handleDelete = async (username) => {
@@ -517,6 +521,7 @@ const UserRegister = () => {
 };
 
 export default UserRegister;
+
 
 
 
