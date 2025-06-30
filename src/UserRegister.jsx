@@ -288,14 +288,12 @@ const UserRegister = () => {
       const response = await fetch(`${API_URL}/api/users`);
       if (!response.ok) throw new Error('Failed to fetch users');
       const data = await response.json();
-
       const normalized = data.map(u => ({
         Username: u.username,
         Password: u.password,
         Role: u.role,
         AllowedPlant: u.allowed_plant || ''
       }));
-
       setUsers(normalized);
     } catch (err) {
       setError(err.message);
@@ -309,34 +307,43 @@ const UserRegister = () => {
       const response = await fetch(`${API_URL}/api/plant-master`);
       if (!response.ok) throw new Error('Failed to fetch plant data');
       const data = await response.json();
-      setPlants(data); // Save plant data (with PlantId and PlantName)
+      setPlants(data); // Expected: [{ PlantId: 1, PlantName: "XYZ" }, ...]
     } catch (err) {
-      console.error('Error fetching plants:', err);
       setError('Could not load plant data.');
     }
   };
 
-  // Get plant names based on AllowedPlant field (comma-separated PlantIds)
+  // Improved plant name display
   const getPlantName = (plantIds) => {
-    if (plants.length === 0) {
-      console.warn('No plant data available');
-      return 'No Plant Data';
-    }
+    if (!plantIds) return '';
+    if (plants.length === 0) return 'No Plant Data';
 
-    // Split the AllowedPlant field (comma-separated PlantIds)
-    const plantIdArray = plantIds.split(',');
+    const plantIdArray = plantIds.split(',').map(p => p.trim());
 
-    // Map the PlantIds to their corresponding PlantNames
-    const plantNames = plantIdArray.map(id => {
-      const plant = plants.find(p => p.PlantId === Number(id.trim())); // Find the plant by ID
-      return plant ? plant.PlantName : `Unknown Plant ${id.trim()}`; // Return the name or "Unknown Plant"
+    const plantNames = plantIdArray.map(pItem => {
+      const num = Number(pItem);
+      let matchedPlant = null;
+
+      // Match by ID
+      if (!isNaN(num)) {
+        matchedPlant = plants.find(p => p.PlantId === num);
+      }
+
+      // Match by name (case-insensitive) if not found by ID
+      if (!matchedPlant) {
+        matchedPlant = plants.find(p =>
+          p.PlantName.toLowerCase() === pItem.toLowerCase()
+        );
+      }
+
+      return matchedPlant ? matchedPlant.PlantName : `Unknown: ${pItem}`;
     });
 
-    return plantNames.join(', '); // Join multiple names with commas
+    return plantNames.join(', ');
   };
 
   const handleDelete = async (username) => {
-    if (!window.confirm(`Are you sure you want to delete user "${username}"?`)) return;
+    if (!window.confirm(`Delete user "${username}"?`)) return;
     try {
       const response = await fetch(`${API_URL}/api/users/${encodeURIComponent(username)}`, {
         method: 'DELETE'
@@ -463,19 +470,13 @@ const UserRegister = () => {
                         </select>
                       </td>
                       <td>
-                        <select
+                        <input
                           name="AllowedPlant"
                           value={editUser.AllowedPlant}
                           onChange={handleEditChange}
                           style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #bdbdbd' }}
-                        >
-                          <option value="">Select Plant</option>
-                          {plants.map(plant => (
-                            <option key={plant.PlantId} value={plant.PlantId}>
-                              {plant.PlantName}
-                            </option>
-                          ))}
-                        </select>
+                          placeholder="Comma-separated IDs or names"
+                        />
                       </td>
                       <td colSpan={2} style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                         <button
@@ -521,6 +522,7 @@ const UserRegister = () => {
 };
 
 export default UserRegister;
+
 
 
 
