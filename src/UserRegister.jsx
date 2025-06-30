@@ -252,208 +252,258 @@
 // };
 
 // export default UserRegister;
+
 import React, { useEffect, useState } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL;
+const ALL_ROLES = ['Admin','User','Dispatcher','GateKeeper','Report','Loader'];
 
-const UserRegister = () => {
+export default function UserRegister() {
   const [users, setUsers] = useState([]);
   const [plants, setPlants] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
+  const [editIdx, setEditIdx] = useState(null);
   const [editUser, setEditUser] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const [showPlantDropdown, setShowPlantDropdown] = useState(false);
 
   useEffect(() => {
-    fetchAllData();
+    fetchAll();
+
+    const handler = e => {
+      if (!e.target.closest('.role-dropdown')) setShowRoleDropdown(false);
+      if (!e.target.closest('.plant-dropdown')) setShowPlantDropdown(false);
+    };
+    window.addEventListener('click', handler);
+    return () => window.removeEventListener('click', handler);
   }, []);
 
-  const fetchAllData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [userRes, plantRes] = await Promise.all([
-        fetch(`${API_URL}/api/users`),
-        fetch(`${API_URL}/api/plantmaster`)
-      ]);
+  async function fetchAll() {
+    const [uRes, pRes] = await Promise.all([
+      fetch(`${API_URL}/api/users`),
+      fetch(`${API_URL}/api/plantmaster`)
+    ]);
+    setUsers(await uRes.json());
+    setPlants(await pRes.json());
+  }
 
-      if (!userRes.ok) throw new Error("Failed to fetch users");
-      if (!plantRes.ok) throw new Error("Failed to fetch plant master");
-
-      const userData = await userRes.json();
-      const plantData = await plantRes.json();
-
-      setUsers(userData);
-      setPlants(plantData);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getPlantNamesFromIds = (plantString) => {
-    if (!plantString || !plants.length) return '';
-    const ids = plantString.split(',').map(id => id.trim());
-    const names = ids.map(id => {
-      const match = plants.find(p => p.plantid === Number(id));
-      return match ? match.plantname : `Unknown(${id})`;
+  const handleEdit = (u, i) => {
+    setEditIdx(i);
+    setEditUser({
+      ...u,
+      allowedplants: u.allowedplants || '',
+      role: u.role || ''
     });
-    return names.join(', ');
   };
-
-  const handleEdit = (index) => {
-    setEditIndex(index);
-    setEditUser({ ...users[index] });
-  };
-
   const handleCancel = () => {
-    setEditIndex(null);
+    setEditIdx(null);
     setEditUser({});
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditUser(prev => ({ ...prev, [name]: value }));
+  const handleChange = e => {
+    setEditUser(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handlePlantChange = (e) => {
-    const options = Array.from(e.target.selectedOptions).map(opt => opt.value);
-    setEditUser(prev => ({ ...prev, allowedplants: options.join(',') }));
+  const toggleListValue = (field, value) => {
+    setEditUser(prev => {
+      const cur = prev[field] || '';
+      const arr = cur.split(',').filter(Boolean);
+      const nextArr = arr.includes(value)
+        ? arr.filter(x => x !== value)
+        : [...arr, value];
+      return { ...prev, [field]: nextArr.join(',') };
+    });
   };
 
   const handleSave = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/users/${editUser.username}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editUser)
-      });
-
-      if (!res.ok) throw new Error('Failed to update user');
-      await fetchAllData();
-      setEditIndex(null);
-    } catch (err) {
-      alert('Error saving user: ' + err.message);
-    }
+    await fetch(`${API_URL}/api/users/${editUser.username}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editUser)
+    });
+    await fetchAll();
+    setEditIdx(null);
+    setEditUser({});
   };
 
-  const handleDelete = async (username) => {
-    if (!window.confirm(`Are you sure you want to delete user "${username}"?`)) return;
-    try {
-      const res = await fetch(`${API_URL}/api/users/${username}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete user');
-      await fetchAllData();
-    } catch (err) {
-      alert('Error deleting user: ' + err.message);
-    }
+  const handleDelete = async username => {
+    if (!confirm(`Delete ${username}?`)) return;
+    await fetch(`${API_URL}/api/users/${username}`, { method: 'DELETE' });
+    await fetchAll();
+  };
+
+  const getNames = (str, list, idKey, nameKey) => {
+    if (!str) return '';
+    return str
+      .split(',')
+      .map(id => {
+        const m = list.find(x => String(x[idKey]) === id);
+        return m ? m[nameKey] : id;
+      })
+      .join(', ');
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: 1000, margin: '0 auto' }}>
-      <h2 style={{ fontWeight: 'bold', fontSize: '2rem', marginBottom: '1.5rem', color: '#1a237e' }}>
-        User List
-      </h2>
-
-      {loading ? (
-        <div>Loading...</div>
-      ) : error ? (
-        <div style={{ color: 'red' }}>{error}</div>
-      ) : (
-        <div style={{
-          overflowX: 'auto',
-          borderRadius: 16,
-          background: '#f4f6fa',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.07)'
-        }}>
-          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
-            <thead>
-              <tr style={{ background: '#1976d2', color: '#fff' }}>
-                <th style={{ padding: '12px' }}>Username</th>
-                <th style={{ padding: '12px' }}>Password</th>
-                <th style={{ padding: '12px' }}>Role</th>
-                <th style={{ padding: '12px' }}>Allowed Plants</th>
-                <th style={{ padding: '12px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user, idx) => (
-                <tr key={idx} style={{ background: idx % 2 === 0 ? '#fff' : '#e3eafc' }}>
-                  {editIndex === idx ? (
-                    <>
-                      <td style={{ padding: '10px' }}>
-                        <input
-                          value={editUser.username}
-                          name="username"
-                          disabled
-                          style={{ width: '100%' }}
-                        />
-                      </td>
-                      <td style={{ padding: '10px' }}>
-                        <input
-                          value={editUser.password}
-                          name="password"
-                          onChange={handleChange}
-                          type="text"
-                          style={{ width: '100%' }}
-                        />
-                      </td>
-                      <td style={{ padding: '10px' }}>
-                        <input
-                          value={editUser.role}
-                          name="role"
-                          onChange={handleChange}
-                          style={{ width: '100%' }}
-                        />
-                      </td>
-                      <td style={{ padding: '10px' }}>
-                        <select
-                          multiple
-                          value={editUser.allowedplants?.split(',') || []}
-                          onChange={handlePlantChange}
-                          style={{ width: '100%' }}
-                        >
-                          {plants.map(plant => (
-                            <option key={plant.plantid} value={plant.plantid}>
-                              {plant.plantname}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td style={{ padding: '10px' }}>
-                        <button onClick={handleSave}>Save</button>{' '}
-                        <button onClick={handleCancel}>Cancel</button>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td style={{ padding: '10px' }}>{user.username}</td>
-                      <td style={{ padding: '10px' }}>{'*'.repeat(user.password?.length || 8)}</td>
-                      <td style={{ padding: '10px' }}>{user.role}</td>
-                      <td style={{ padding: '10px' }}>{getPlantNamesFromIds(user.allowedplants)}</td>
-                      <td style={{ padding: '10px' }}>
-                        <button onClick={() => handleEdit(idx)}>Edit</button>{' '}
-                        <button onClick={() => handleDelete(user.username)}>Delete</button>
-                      </td>
-                    </>
-                  )}
-                </tr>
+    <div className="max-w-5xl mx-auto p-6">
+      <h1 className="text-3xl font-bold text-indigo-800 mb-6">
+        User Register
+      </h1>
+      <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <table className="w-full text-left">
+          <thead className="bg-blue-600 text-white">
+            <tr>
+              {['Username','Password','Role','Allowed Plants','Actions'].map(c => (
+                <th key={c} className="px-6 py-3">{c}</th>
               ))}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan="5" style={{ padding: '1rem', textAlign: 'center', color: '#888' }}>
-                    No users found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((u, i) => (
+              <tr
+                key={u.username}
+                className={i % 2 ? 'bg-gray-50' : 'bg-white'}>
+                {editIdx === i ? (
+                  <>
+                    <td className="p-4">
+                      <input
+                        name="username"
+                        value={editUser.username}
+                        disabled
+                        className="w-full border-gray-300 rounded px-3 py-2 bg-gray-100"
+                      />
+                    </td>
+                    <td className="p-4">
+                      <input
+                        name="password"
+                        value={editUser.password}
+                        onChange={handleChange}
+                        className="w-full border-gray-300 rounded px-3 py-2"
+                      />
+                    </td>
+
+                    {/* Role Dropdown */}
+                    <td className="p-4 role-dropdown relative">
+                      <div
+                        onClick={() => setShowRoleDropdown(show => !show)}
+                        className="border rounded px-3 py-2 bg-white cursor-pointer"
+                      >
+                        {editUser.role.split(',').filter(Boolean).join(', ') ||
+                          'Select Roles'}
+                      </div>
+                      {showRoleDropdown && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-40 overflow-y-auto">
+                          {ALL_ROLES.map(r => (
+                            <label
+                              key={r}
+                              className="flex items-center px-3 py-1 hover:bg-gray-100">
+                              <input
+                                type="checkbox"
+                                checked={editUser.role
+                                  .split(',')
+                                  .includes(r)}
+                                onChange={() => toggleListValue('role', r)}
+                                className="mr-2"
+                              />
+                              {r}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Plant Dropdown */}
+                    <td className="p-4 plant-dropdown relative">
+                      <div
+                        onClick={() => setShowPlantDropdown(show => !show)}
+                        className="border rounded px-3 py-2 bg-white cursor-pointer"
+                      >
+                        {getNames(editUser.allowedplants, plants, 'plantid', 'plantname') ||
+                          'Select Plants'}
+                      </div>
+                      {showPlantDropdown && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-40 overflow-y-auto">
+                          {plants.length === 0 && (
+                            <div className="p-3 text-gray-500">No plants</div>
+                          )}
+                          {plants.map(p => {
+                            const arr = editUser.allowedplants
+                              ? editUser.allowedplants.split(',')
+                              : [];
+                            return (
+                              <label
+                                key={p.plantid}
+                                className="flex items-center px-3 py-1 hover:bg-gray-100">
+                                <input
+                                  type="checkbox"
+                                  checked={arr.includes(String(p.plantid))}
+                                  onChange={() =>
+                                    toggleListValue(
+                                      'allowedplants',
+                                      String(p.plantid)
+                                    )
+                                  }
+                                  className="mr-2"
+                                />
+                                {p.plantname}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </td>
+
+                    <td className="p-4 space-x-2">
+                      <button
+                        onClick={handleSave}
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancel}
+                        className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+                      >
+                        Cancel
+                      </button>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-6 py-4 font-medium">{u.username}</td>
+                    <td className="px-6 py-4">
+                      {'*'.repeat(u.password.length)}
+                    </td>
+                    <td className="px-6 py-4">{u.role}</td>
+                    <td className="px-6 py-4">
+                      {getNames(u.allowedplants, plants, 'plantid', 'plantname')}
+                    </td>
+                    <td className="px-6 py-4 space-x-2">
+                      <button
+                        onClick={() => handleEdit(u, i)}
+                        className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(u.username)}
+                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </>
+                )}
+              </tr>
+            ))}
+            {users.length === 0 && (
+              <tr>
+                <td colSpan="5" className="text-center py-8 text-gray-500">
+                  No users found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
-};
-
-export default UserRegister;
-
+}
