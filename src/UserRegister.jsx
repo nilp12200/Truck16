@@ -637,7 +637,7 @@ const UserRegister = () => {
 
   const fetchPlants = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/plantmaster`);
+      const response = await fetch(`${API_URL}/api/plants`);
       if (!response.ok) throw new Error('Failed to fetch plant data');
       const data = await response.json();
       setPlants(data); // format: [{ PlantId: 1, PlantName: 'Ahmedabad' }]
