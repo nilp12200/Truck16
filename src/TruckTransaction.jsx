@@ -799,12 +799,11 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-function TruckTransaction() {
-  const navigate = useNavigate();
+export default function TruckTransaction() {
   const location = useLocation();
 
   const [formData, setFormData] = useState({
@@ -817,7 +816,8 @@ function TruckTransaction() {
   const [tableData, setTableData] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [newRow, setNewRow] = useState({
-    plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay'
+    detailId: null, plantName: '', loadingSlipNo: '', qty: '',
+    priority: '', remarks: '', freight: 'To Pay'
   });
   const [message, setMessage] = useState('');
 
@@ -829,7 +829,7 @@ function TruckTransaction() {
   useEffect(() => {
     axios.get(`${API_URL}/api/plants`)
       .then(res => setPlantList(res.data))
-      .catch(() => setPlantList([]));
+      .catch(err => console.error('Error fetching plants:', err));
   }, []);
 
   const fetchTruckDetails = async (truckNo) => {
@@ -848,6 +848,7 @@ function TruckTransaction() {
         remarks: master.remarks
       });
       setTableData(details.map(row => ({
+        detailId: row.detailid,
         plantName: row.plantname,
         loadingSlipNo: row.loadingslipno,
         qty: row.qty,
@@ -855,13 +856,30 @@ function TruckTransaction() {
         remarks: row.remarks,
         freight: row.freight
       })));
-    } catch {
+    } catch (err) {
+      console.error('Error loading truck details:', err);
       setMessage('❌ Failed to load truck details.');
     }
   };
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleNewRowChange = (e) => setNewRow({ ...newRow, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    let { name, value } = e.target;
+    if (name === 'truckNo') {
+      value = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      let formatted = '';
+      if (value.length > 0) formatted += value.substring(0, 2);
+      if (value.length > 2) formatted += '-' + value.substring(2, 4);
+      if (value.length > 4) formatted += '-' + value.substring(4, 6);
+      if (value.length > 6) formatted += '-' + value.substring(6, 10);
+      setFormData({ ...formData, truckNo: formatted });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleNewRowChange = (e) => {
+    setNewRow({ ...newRow, [e.target.name]: e.target.value });
+  };
 
   const addOrUpdateRow = () => {
     if (!newRow.plantName || !newRow.loadingSlipNo || !newRow.qty) return;
@@ -871,9 +889,9 @@ function TruckTransaction() {
       setTableData(updated);
       setEditingIndex(null);
     } else {
-      setTableData([...tableData, { ...newRow }]);
+      setTableData([...tableData, { ...newRow, detailId: null }]);
     }
-    setNewRow({ plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
+    setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
   };
 
   const handleEditRow = (idx) => {
@@ -884,134 +902,140 @@ function TruckTransaction() {
   const handleDeleteRow = (idx) => {
     setTableData(tableData.filter((_, i) => i !== idx));
     setEditingIndex(null);
-    setNewRow({ plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
+    setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
   };
 
   const handleSubmit = async () => {
     try {
       let dataToSubmit = [...tableData];
-      if (Object.values(newRow).some(val => val && val.trim?.() !== '')) {
-        dataToSubmit.push({ ...newRow });
+      const isNewRowFilled = Object.values(newRow).some(val => val && val.trim?.() !== '');
+      if (isNewRowFilled) {
+        dataToSubmit.push({ ...newRow, detailId: null });
       }
-      const response = await axios.post(`${API_URL}/api/truck-transaction`, {
-        formData,
-        tableData: dataToSubmit
-      });
+      const response = await axios.post(`${API_URL}/api/truck-transaction`, { formData, tableData: dataToSubmit });
       if (response.data.success) {
-        navigate('/truckfind', { state: { refresh: true, justUpdatedTruckNo: formData.truckNo } });
+        setMessage('✅ Transaction saved successfully!');
+        // CLEAR form
+        setFormData({
+          transactionId: null,
+          truckNo: '', transactionDate: '', cityName: '', transporter: '',
+          amountPerTon: '', truckWeight: '', deliverPoint: '', remarks: ''
+        });
+        setTableData([]);
+        setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
       } else {
         setMessage('❌ Error saving transaction.');
       }
-    } catch {
+    } catch (error) {
+      console.error('Submit error:', error);
       setMessage('❌ Server error while submitting data.');
     }
   };
 
   return (
-    <div className="p-6 md:p-10 bg-gray-100 min-h-screen">
-      <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-xl p-6 space-y-6">
-        <h1 className="text-2xl font-bold text-center">Truck Transaction</h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-gray-50 py-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10">
+        <h1 className="text-3xl font-bold text-center text-slate-800 mb-8 tracking-wide">Truck Transaction</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {['truckNo', 'transactionDate', 'cityName', 'transporter'].map((name, idx) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label className="font-medium text-slate-700 mb-1 block">Truck No</label>
+            <input
+              type="text"
+              name="truckNo"
+              maxLength={13}
+              value={formData.truckNo}
+              onChange={handleChange}
+              placeholder="e.g., GJ-01-AB-1234"
+              className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
+          {['transactionDate', 'cityName', 'transporter'].map((field, idx) => (
             <div key={idx}>
-              <label className="block font-medium capitalize">{name.replace(/([A-Z])/g, ' $1')}</label>
+              <label className="font-medium text-slate-700 mb-1 block capitalize">{field.replace(/([A-Z])/g, ' $1')}</label>
               <input
-                type={name === 'transactionDate' ? 'date' : 'text'}
-                name={name}
-                value={formData[name]}
+                type={field === 'transactionDate' ? 'date' : 'text'}
+                name={field}
+                value={formData[field]}
                 onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
+                className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
           ))}
         </div>
 
-        <table className="w-full border text-sm">
-          <thead className="bg-yellow-200">
-            <tr>
-              <th className="border px-2">Plant</th>
-              <th className="border px-2">Slip No</th>
-              <th className="border px-2">Qty</th>
-              <th className="border px-2">Priority</th>
-              <th className="border px-2">Remarks</th>
-              <th className="border px-2">Freight</th>
-              <th className="border px-2">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tableData.map((row, idx) => (
-              <tr key={idx}>
-                <td className="border px-2">{row.plantName}</td>
-                <td className="border px-2">{row.loadingSlipNo}</td>
-                <td className="border px-2">{row.qty}</td>
-                <td className="border px-2">{row.priority}</td>
-                <td className="border px-2">{row.remarks}</td>
-                <td className="border px-2">{row.freight}</td>
-                <td className="border px-2 space-x-1">
-                  <button onClick={() => handleEditRow(idx)} className="text-blue-600 hover:underline">Edit</button>
-                  <button onClick={() => handleDeleteRow(idx)} className="text-red-600 hover:underline">Delete</button>
-                </td>
+        <div className="overflow-x-auto mb-6">
+          <table className="w-full text-sm text-left border shadow rounded-xl">
+            <thead className="bg-indigo-500 text-white">
+              <tr>
+                <th className="p-2">Plant</th>
+                <th className="p-2">Slip No</th>
+                <th className="p-2">Qty</th>
+                <th className="p-2">Priority</th>
+                <th className="p-2">Remarks</th>
+                <th className="p-2">Freight</th>
+                <th className="p-2">Actions</th>
               </tr>
-            ))}
-            <tr>
-              <td className="border px-2">
-                <select name="plantName" value={newRow.plantName} onChange={handleNewRowChange} className="w-full border rounded">
-                  <option value="">Select</option>
-                  {plantList.map((p, i) => (
-                    <option key={i} value={p.plantname}>{p.plantname}</option>
-                  ))}
-                </select>
-              </td>
-              {['loadingSlipNo', 'qty', 'priority', 'remarks'].map(name => (
-                <td key={name} className="border px-2">
-                  <input name={name} value={newRow[name]} onChange={handleNewRowChange} className="w-full border rounded" />
-                </td>
+            </thead>
+            <tbody>
+              {tableData.map((row, idx) => (
+                <tr key={idx} className="bg-white even:bg-slate-50">
+                  <td className="p-2">{row.plantName}</td>
+                  <td className="p-2">{row.loadingSlipNo}</td>
+                  <td className="p-2">{row.qty}</td>
+                  <td className="p-2">{row.priority}</td>
+                  <td className="p-2">{row.remarks}</td>
+                  <td className="p-2">{row.freight}</td>
+                  <td className="p-2 flex gap-2 justify-center">
+                    <button className="bg-yellow-300 text-yellow-900 px-3 py-1 rounded-full shadow hover:scale-105" onClick={() => handleEditRow(idx)}>Edit</button>
+                    <button className="bg-red-300 text-red-900 px-3 py-1 rounded-full shadow hover:scale-105" onClick={() => handleDeleteRow(idx)}>Delete</button>
+                  </td>
+                </tr>
               ))}
-              <td className="border px-2">
-                <select name="freight" value={newRow.freight} onChange={handleNewRowChange} className="w-full border rounded">
-                  <option value="To Pay">To Pay</option>
-                  <option value="Paid">Paid</option>
-                </select>
-              </td>
-              <td className="border px-2"></td>
-            </tr>
-          </tbody>
-        </table>
+              <tr className="bg-slate-100">
+                <td className="p-2">
+                  <select name="plantName" value={newRow.plantName} onChange={handleNewRowChange} className="w-full p-2 border border-slate-300 rounded-lg">
+                    <option value="">Select</option>
+                    {plantList.map((p, i) => (<option key={i} value={p.plantname}>{p.plantname}</option>))}
+                  </select>
+                </td>
+                {['loadingSlipNo', 'qty', 'priority', 'remarks'].map((name) => (
+                  <td key={name} className="p-2">
+                    <input name={name} value={newRow[name]} onChange={handleNewRowChange} className="w-full p-2 border border-slate-300 rounded-lg" />
+                  </td>
+                ))}
+                <td className="p-2">
+                  <select name="freight" value={newRow.freight} onChange={handleNewRowChange} className="w-full p-2 border border-slate-300 rounded-lg">
+                    <option value="To Pay">To Pay</option>
+                    <option value="Paid">Paid</option>
+                  </select>
+                </td>
+                <td className="p-2 text-center">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-        <button onClick={addOrUpdateRow} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <button onClick={addOrUpdateRow} className="bg-yellow-400 text-yellow-900 font-semibold px-4 py-2 rounded-full shadow hover:scale-105 mb-6">
           {editingIndex !== null ? 'Update Row' : 'Add Row'}
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {['amountPerTon', 'deliverPoint', 'truckWeight'].map((name, idx) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {['amountPerTon', 'deliverPoint', 'truckWeight'].map((field, idx) => (
             <div key={idx}>
-              <label className="block font-medium capitalize">{name.replace(/([A-Z])/g, ' $1')}</label>
-              <input
-                type="text"
-                name={name}
-                value={formData[name]}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-              />
+              <label className="font-medium text-slate-700 mb-1 block capitalize">{field.replace(/([A-Z])/g, ' $1')}</label>
+              <input name={field} value={formData[field]} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
             </div>
           ))}
         </div>
 
-        <div>
-          <label className="block font-medium">Remarks</label>
-          <textarea name="remarks" value={formData.remarks} onChange={handleChange} className="w-full border rounded px-2 py-1" rows="3" />
-        </div>
+        <label className="font-medium text-slate-700 mb-1 block">Remarks</label>
+        <textarea name="remarks" value={formData.remarks} onChange={handleChange} rows="3" className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 mb-4"></textarea>
 
-        <div className="text-center">
-          <button onClick={handleSubmit} className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Submit</button>
-        </div>
+        <button onClick={handleSubmit} className="bg-green-500 text-white font-semibold px-6 py-2 rounded-full shadow hover:scale-105">Submit</button>
 
-        {message && <p className="text-center text-blue-600 mt-2">{message}</p>}
+        {message && <p className="text-center text-green-600 text-lg font-semibold mt-4">{message}</p>}
       </div>
     </div>
   );
 }
-
-export default TruckTransaction;
-
