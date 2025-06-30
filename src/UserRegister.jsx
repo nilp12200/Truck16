@@ -254,7 +254,7 @@
 // export default UserRegister;
 import React, { useEffect, useState } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL; // Ensure this is correctly set to your backend's URL
+const API_URL = import.meta.env.VITE_API_URL; // Ensure this is set to your backend URL
 
 const iconEdit = (
   <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
@@ -281,7 +281,6 @@ const UserRegister = () => {
     fetchPlants();
   }, []);
 
-  // Fetch users data
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
@@ -289,7 +288,7 @@ const UserRegister = () => {
       const response = await fetch(`${API_URL}/api/users`);
       if (!response.ok) throw new Error('Failed to fetch users');
       const data = await response.json();
-      
+
       const normalized = data.map(u => ({
         Username: u.username,
         Password: u.password,
@@ -305,30 +304,33 @@ const UserRegister = () => {
     }
   };
 
-  // Fetch plant data from the backend (corrected endpoint)
   const fetchPlants = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/plant-master`); // Corrected endpoint
+      const response = await fetch(`${API_URL}/api/plant-master`);
       if (!response.ok) throw new Error('Failed to fetch plant data');
       const data = await response.json();
-      setPlants(data); // Populate plants data
+      setPlants(data);
     } catch (err) {
       console.error('Error fetching plants:', err);
-      setError('Could not load plant data. Please check the API or server.');
+      setError('Could not load plant data.');
     }
   };
 
-  // Get plant name based on plantId
   const getPlantName = (plantId) => {
     if (plants.length === 0) {
       console.warn('No plant data available');
       return 'No Plant Data';
     }
-    const plant = plants.find(p => p.PlantId === Number(plantId));
-    return plant ? plant.PlantName : 'Unknown Plant';
+
+    const plantIds = plantId.split(',');
+    const plantNames = plantIds.map(id => {
+      const plant = plants.find(p => p.PlantId === Number(id.trim()));
+      return plant ? plant.PlantName : `Unknown Plant ${id.trim()}`;
+    });
+
+    return plantNames.join(', ');
   };
 
-  // Handle delete operation
   const handleDelete = async (username) => {
     if (!window.confirm(`Are you sure you want to delete user "${username}"?`)) return;
     try {
@@ -342,19 +344,16 @@ const UserRegister = () => {
     }
   };
 
-  // Handle edit operation
   const handleEdit = (user, idx) => {
     setEditIdx(idx);
     setEditUser({ ...user });
   };
 
-  // Handle changes while editing
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditUser(prev => ({ ...prev, [name]: value }));
   };
 
-  // Save the edited user
   const handleEditSave = async (username) => {
     if (!editUser.Username.trim() || !editUser.Password.trim()) {
       alert("Username and Password are required.");
@@ -379,7 +378,6 @@ const UserRegister = () => {
     }
   };
 
-  // Cancel the edit operation
   const handleEditCancel = () => {
     setEditIdx(null);
   };
@@ -519,5 +517,6 @@ const UserRegister = () => {
 };
 
 export default UserRegister;
+
 
 
