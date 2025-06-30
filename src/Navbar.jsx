@@ -1626,6 +1626,8 @@ function Navbar() {
     GateKeeper: ['gate'],
     Report: ['reports'],
     Loader: ['loader'],
+    UserMaster: ['usermaster'],
+    UserRegister: ['userregister']
   };
 
   const canAccess = (route) => {
