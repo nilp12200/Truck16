@@ -904,10 +904,10 @@ const UserRegister = () => {
     const plantIds = allowedPlants.split(','); // Convert comma-separated string to array
     return plantIds
       .map(plantId => {
-        const plant = plants.find(p => p.PlantId === Number(plantId));
-        return plant ? plant.PlantName : plantId; // Return plant name or ID if not found
+        const plant = plants.find(p => p.PlantId === Number(plantId)); // Find the plant by ID
+        return plant ? plant.PlantName : plantId; // Return plant name, or the ID if not found
       })
-      .join(', '); // Join the plant names with a comma
+      .join(', '); // Join the names into a comma-separated string
   };
 
   const handleDelete = async (username) => {
@@ -1098,4 +1098,5 @@ const UserRegister = () => {
 };
 
 export default UserRegister;
+
 
