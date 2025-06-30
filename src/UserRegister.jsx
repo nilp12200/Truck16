@@ -902,10 +902,12 @@ const UserRegister = () => {
 
   const getPlantNames = (allowedPlants) => {
     const plantIds = allowedPlants.split(','); // Convert comma-separated string to array
-    return plantIds.map(plantId => {
-      const plant = plants.find(p => p.PlantId === Number(plantId));
-      return plant ? plant.PlantName : plantId; // Return plant name or ID if not found
-    }).join(', '); // Join the plant names with a comma
+    return plantIds
+      .map(plantId => {
+        const plant = plants.find(p => p.PlantId === Number(plantId));
+        return plant ? plant.PlantName : plantId; // Return plant name or ID if not found
+      })
+      .join(', '); // Join the plant names with a comma
   };
 
   const handleDelete = async (username) => {
@@ -1067,7 +1069,7 @@ const UserRegister = () => {
                       <td style={{ padding: '12px', fontWeight: 500 }}>{'*'.repeat(user.Password?.length || 8)}</td>
                       <td style={{ padding: '12px', fontWeight: 500 }}>{user.Role}</td>
                       <td style={{ padding: '12px', fontWeight: 500 }}>
-                        {plants.length ? getPlantNames(user.AllowedPlant) : 'Loading plants...'}
+                        {getPlantNames(user.AllowedPlant)}
                       </td>
                       <td style={{ padding: '12px' }}>
                         <button
