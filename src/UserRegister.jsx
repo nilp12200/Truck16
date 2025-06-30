@@ -839,12 +839,16 @@
 // export default UserRegister;
 import React, { useEffect, useState } from 'react';
 
-// Icons
+// Icons for Edit and Delete actions
 const iconEdit = (
-  <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M5 19h14v2H5v-2zm14.7-13.3a1 1 0 0 0-1.4 0l-2 2 3.4 3.4 2-2a1 1 0 0 0 0-1.4l-2-2zm-3.4 2L5 17.3V21h3.7L19.3 8.7l-3.4-3.4z"/></svg>
+  <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+    <path fill="#fff" d="M5 19h14v2H5v-2zm14.7-13.3a1 1 0 0 0-1.4 0l-2 2 3.4 3.4 2-2a1 1 0 0 0 0-1.4l-2-2zm-3.4 2L5 17.3V21h3.7L19.3 8.7l-3.4-3.4z"/>
+  </svg>
 );
 const iconDelete = (
-  <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+  <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+    <path fill="#fff" d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+  </svg>
 );
 
 const UserRegister = () => {
@@ -855,7 +859,6 @@ const UserRegister = () => {
   const [editIdx, setEditIdx] = useState(null);
   const [editUser, setEditUser] = useState({ Username: '', Password: '', Role: '', AllowedPlants: '' });
 
-  // Fetch the API URL from the Vite environment variable
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
@@ -863,7 +866,6 @@ const UserRegister = () => {
     fetchPlants();
   }, []);
 
-  // Fetch users from the backend API
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
@@ -879,7 +881,6 @@ const UserRegister = () => {
     }
   };
 
-  // Fetch plants from the backend API
   const fetchPlants = async () => {
     try {
       const response = await fetch(`${API_URL}/api/plants`);
@@ -891,7 +892,6 @@ const UserRegister = () => {
     }
   };
 
-  // Delete user
   const handleDelete = async (username) => {
     if (!window.confirm(`Are you sure you want to delete user "${username}"?`)) return;
     try {
@@ -903,19 +903,16 @@ const UserRegister = () => {
     }
   };
 
-  // Handle editing a user
   const handleEdit = (user, idx) => {
     setEditIdx(idx);
     setEditUser({ ...user });
   };
 
-  // Handle input change in the edit form
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditUser(prev => ({ ...prev, [name]: value }));
   };
 
-  // Save the edited user data
   const handleEditSave = async (username) => {
     try {
       const response = await fetch(`${API_URL}/api/users/${encodeURIComponent(username)}`, {
@@ -932,7 +929,6 @@ const UserRegister = () => {
     }
   };
 
-  // Cancel the edit
   const handleEditCancel = () => {
     setEditIdx(null);
   };
@@ -1033,12 +1029,7 @@ const UserRegister = () => {
                         <td style={{ padding: '12px', border: 'none', fontWeight: 500 }}>{user.Username}</td>
                         <td style={{ padding: '12px', border: 'none', fontWeight: 500 }}>{user.Password}</td>
                         <td style={{ padding: '12px', border: 'none', fontWeight: 500 }}>{user.Role}</td>
-                        <td style={{ padding: '12px', border: 'none', fontWeight: 500 }}>
-                          {user.AllowedPlants ? user.AllowedPlants.split(',').map(plantId => {
-                            const plant = plants.find(p => p.PlantID === parseInt(plantId));
-                            return plant ? plant.PlantName : plantId;
-                          }).join(', ') : '-'}
-                        </td>
+                        <td style={{ padding: '12px', border: 'none', fontWeight: 500 }}>{user.AllowedPlants || '-'}</td>
                         <td style={{ padding: '12px', border: 'none' }}>
                           <button onClick={() => handleEdit(user, idx)} style={{ background: '#ffc107', border: 'none', borderRadius: 6, padding: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit">
                             {iconEdit}
@@ -1063,3 +1054,4 @@ const UserRegister = () => {
 };
 
 export default UserRegister;
+
