@@ -312,14 +312,19 @@ const UserRegister = () => {
       setPlants(data); // format: [{ PlantId: 1, PlantName: 'Ahmedabad' }]
     } catch (err) {
       console.error('Error fetching plants:', err);
+      setError('Could not load plant data. Please check the API or server.');
     }
   };
 
   const getPlantName = (plantId) => {
-    console.log('Plants:', plants);  // Log plants data to check if it is correctly fetched
+    if (plants.length === 0) {
+      console.warn('No plant data available');
+      return 'No Plant Data';
+    }
+    console.log('Plants:', plants);
     const plant = plants.find(p => p.PlantId === Number(plantId));
-    console.log('Matching Plant:', plant); // Log the matched plant object
-    return plant ? plant.PlantName : plantId;
+    console.log('Matching Plant:', plant);
+    return plant ? plant.PlantName : 'Unknown Plant';
   };
 
   const handleDelete = async (username) => {
@@ -508,4 +513,5 @@ const UserRegister = () => {
 };
 
 export default UserRegister;
+
 
