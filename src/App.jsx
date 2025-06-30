@@ -250,6 +250,8 @@ const roleAccess = {
   gatekeeper: ['gate'],
   report: ['reports'],
   loader: ['loader'],
+  usermaster: ['usermaster'],
+  userregister: ['userregister']
 };
 
 // Authentication check
