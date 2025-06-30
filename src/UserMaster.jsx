@@ -1665,7 +1665,7 @@ export default function UserMaster() {
           <div>
             <label className="block mb-1 font-semibold">Module Rights</label>
             <div className="flex flex-wrap gap-3">
-              {['Admin', 'GateKeeper', 'Report', 'Dispatch', 'Loader'].map((right) => (
+              {['Admin', 'GateKeeper', 'Report', 'Dispatch', 'Loader','UserRegister','UserMaster'].map((right) => (
                 <label key={right} className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
