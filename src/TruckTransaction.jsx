@@ -796,7 +796,6 @@
 // export default TruckTransaction;
 // // ***************************************************
 
-
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
@@ -858,8 +857,14 @@ export default function TruckTransaction() {
         freight: row.freight
       })));
     } catch (err) {
-      console.error('Error loading truck details:', err);
-      setMessage('❌ Failed to load truck details.');
+      if (err.response?.status === 409) {
+        setMessage('🚫 Truck is already in transport. Please complete Check-Out first.');
+      } else if (err.response?.status === 404) {
+        setMessage('Truck not found. You can create a new transaction.');
+      } else {
+        console.error('Error loading truck details:', err);
+        setMessage('❌ Failed to load truck details.');
+      }
     }
   };
 
@@ -916,7 +921,6 @@ export default function TruckTransaction() {
       const response = await axios.post(`${API_URL}/api/truck-transaction`, { formData, tableData: dataToSubmit });
       if (response.data.success) {
         setMessage('✅ Transaction saved successfully!');
-        // CLEAR form
         setFormData({
           transactionId: null,
           truckNo: '', transactionDate: '', cityName: '', transporter: '',
@@ -928,16 +932,19 @@ export default function TruckTransaction() {
         setMessage('❌ Error saving transaction.');
       }
     } catch (error) {
-      console.error('Submit error:', error);
-      setMessage('❌ Server error while submitting data.');
+      if (error.response?.status === 409) {
+        setMessage('🚫 Truck is already in transport. Please complete Check-Out first.');
+      } else {
+        console.error('Submit error:', error);
+        setMessage('❌ Server error while submitting data.');
+      }
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-gray-50 py-8">
+      <CancelButton />
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10">
-                 <CancelButton />
-              
         <h1 className="text-3xl font-bold text-center text-slate-800 mb-8 tracking-wide">Truck Transaction</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
