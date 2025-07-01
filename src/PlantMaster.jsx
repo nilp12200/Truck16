@@ -2837,6 +2837,7 @@
 
 
 
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Pencil, Trash2 } from 'lucide-react';
@@ -2908,6 +2909,7 @@ export default function PlantMaster() {
     }
   };
 
+  // ✅ SOFT DELETE plant
   const handleDelete = async (plantId) => {
     if (confirm('Are you sure you want to delete this plant?')) {
       try {
@@ -2973,76 +2975,103 @@ export default function PlantMaster() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-xl p-6">
+    <div className="min-h-screen bg-gray-100 p-4">
+      <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-4 sm:p-6">
         <CancelButton />
-        <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">Plant Master Admin</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center text-blue-700">Plant Master Admin</h2>
 
         {!editMode && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Plant to Edit</label>
-            <select value={selectedPlantId} onChange={handlePlantSelect} className="block w-full p-2 border rounded-lg border-gray-300 shadow-sm">
-              <option value="">-- Select --</option>
-              {plantList.map((plant) => (
-                <option key={plant.plantid || plant.plantId} value={plant.plantid || plant.plantId}>
-                  {(plant.plantname || plant.plantName)?.toUpperCase()}
-                </option>
-              ))}
-            </select>
+          <div className="mb-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Select Plant to Edit</label>
+              <select value={selectedPlantId} onChange={handlePlantSelect} className="block w-full p-2 border rounded-lg border-gray-300">
+                <option value="">-- Select --</option>
+                {plantList.map((plant) => (
+                  <option key={plant.plantid || plant.plantId} value={plant.plantid || plant.plantId}>
+                    {(plant.plantname || plant.plantName)?.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {showEditButton && (
-              <button onClick={handleEditClick} className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 w-full">
+              <button onClick={handleEditClick} className="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600">
                 ✏️ Edit Selected Plant
               </button>
             )}
 
-            <button onClick={() => setEditMode(true)} className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 w-full">
+            <button onClick={() => setEditMode(true)} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
               ➕ Add New Plant
             </button>
           </div>
         )}
 
+        {/* Table Desktop */}
         {!editMode && (
-          <div className="overflow-auto">
-            <table className="min-w-full border text-center">
-              <thead className="bg-blue-700 text-white">
-                <tr>
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Name</th>
-                  <th className="px-4 py-2">Address</th>
-                  <th className="px-4 py-2">Contact</th>
-                  <th className="px-4 py-2">Mobile</th>
-                  <th className="px-4 py-2">Remarks</th>
-                  <th className="px-4 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plantList.map((plant) => (
-                  <tr key={plant.plantid || plant.plantId} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">{plant.plantid || plant.plantId}</td>
-                    <td className="px-4 py-2">{(plant.plantname || plant.plantName)?.toUpperCase()}</td>
-                    <td className="px-4 py-2">{plant.plantaddress || plant.plantAddress}</td>
-                    <td className="px-4 py-2">{plant.contactperson || plant.contactPerson}</td>
-                    <td className="px-4 py-2">{plant.mobileno || plant.mobileNo}</td>
-                    <td className="px-4 py-2">{plant.remarks}</td>
-                    <td className="px-4 py-2 space-x-2">
-                      <button onClick={() => { setSelectedPlantId(plant.plantid || plant.plantId); handleEditClick(); }} className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">
-                        <Pencil size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(plant.plantid || plant.plantId)} className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
+          <div>
+            <div className="hidden md:block overflow-auto">
+              <table className="min-w-full border text-center text-sm">
+                <thead className="bg-blue-700 text-white">
+                  <tr>
+                    <th className="px-3 py-2">ID</th>
+                    <th className="px-3 py-2">Name</th>
+                    <th className="px-3 py-2">Address</th>
+                    <th className="px-3 py-2">Contact</th>
+                    <th className="px-3 py-2">Mobile</th>
+                    <th className="px-3 py-2">Remarks</th>
+                    <th className="px-3 py-2">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {plantList.map((plant) => (
+                    <tr key={plant.plantid || plant.plantId} className="border-b hover:bg-gray-50">
+                      <td className="px-3 py-2">{plant.plantid || plant.plantId}</td>
+                      <td className="px-3 py-2">{(plant.plantname || plant.plantName)?.toUpperCase()}</td>
+                      <td className="px-3 py-2">{plant.plantaddress || plant.plantAddress}</td>
+                      <td className="px-3 py-2">{plant.contactperson || plant.contactPerson}</td>
+                      <td className="px-3 py-2">{plant.mobileno || plant.mobileNo}</td>
+                      <td className="px-3 py-2">{plant.remarks}</td>
+                      <td className="px-3 py-2 space-x-2">
+                        <button onClick={() => { setSelectedPlantId(plant.plantid || plant.plantId); handleEditClick(); }} className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">
+                          <Pencil size={16} />
+                        </button>
+                        <button onClick={() => handleDelete(plant.plantid || plant.plantId)} className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="block md:hidden space-y-3">
+              {plantList.map((plant) => (
+                <div key={plant.plantid || plant.plantId} className="border border-gray-300 rounded p-3 shadow-sm bg-white">
+                  <p className="text-sm"><span className="font-semibold">ID:</span> {plant.plantid || plant.plantId}</p>
+                  <p className="text-sm"><span className="font-semibold">Name:</span> {(plant.plantname || plant.plantName)?.toUpperCase()}</p>
+                  <p className="text-sm"><span className="font-semibold">Address:</span> {plant.plantaddress || plant.plantAddress}</p>
+                  <p className="text-sm"><span className="font-semibold">Contact:</span> {plant.contactperson || plant.contactPerson}</p>
+                  <p className="text-sm"><span className="font-semibold">Mobile:</span> {plant.mobileno || plant.mobileNo}</p>
+                  <p className="text-sm"><span className="font-semibold">Remarks:</span> {plant.remarks}</p>
+                  <div className="flex gap-2 mt-2">
+                    <button onClick={() => { setSelectedPlantId(plant.plantid || plant.plantId); handleEditClick(); }} className="flex-1 bg-yellow-500 text-white py-1 rounded hover:bg-yellow-600">
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(plant.plantid || plant.plantId)} className="flex-1 bg-red-600 text-white py-1 rounded hover:bg-red-700">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {editMode && (
           <form className="space-y-4 mt-6" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium">Plant Name</label>
                 <input type="text" name="plantName" value={formData.plantName} onChange={handleChange} required className="w-full p-2 border rounded" />
@@ -3051,7 +3080,7 @@ export default function PlantMaster() {
                 <label className="block text-sm font-medium">Contact Person</label>
                 <input type="text" name="contactPerson" value={formData.contactPerson} onChange={handleChange} className="w-full p-2 border rounded" />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <label className="block text-sm font-medium">Address</label>
                 <textarea name="plantAddress" value={formData.plantAddress} onChange={handleChange} className="w-full p-2 border rounded"></textarea>
               </div>
