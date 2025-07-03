@@ -1364,7 +1364,7 @@ const handleRowChange = (idx, e) => {
         setMessage('✅ Transaction saved successfully!');
         setFormData({
           transactionId: null, truckNo: '', transactionDate: '', cityName: '',
-          transporter: '', amountPerTon: '', truckWeight: '', deliverPoint: '', remarks: ''
+          transporter: '', truckWeight: '', deliverPoint: '', remarks: ''
         });
         setTableData([]);
         setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
