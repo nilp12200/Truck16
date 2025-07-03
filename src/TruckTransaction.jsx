@@ -1224,21 +1224,40 @@ const handleChange = (e) => {
   }
 };
 
-  const handleNewRowChange = (e) => {
-    setNewRow({ ...newRow, [e.target.name]: e.target.value });
-  };
+ const handleNewRowChange = (e) => {
+  const { name, value } = e.target;
+  if (name === 'priority') {
+    // Only allow numbers
+    setNewRow({ ...newRow, [name]: value.replace(/[^0-9]/g, '') });
+  } else {
+    setNewRow({ ...newRow, [name]: value });
+  }
+};
 
   // const handleRowChange = (idx, e) => {
   //   const updated = [...tableData];
   //   updated[idx][e.target.name] = e.target.value;
   //   setTableData(updated);
   // };
+// const handleRowChange = (idx, e) => {
+//   const { name, value } = e.target;
+//   if (name === 'priority') {
+//     // Only allow numbers
+//     const cleanedValue = value.replace(/[^0-9]/g, '');
+//     const updated = [...tableData];
+//     updated[idx][name] = cleanedValue;
+//     setTableData(updated);
+//   } else {
+//     const updated = [...tableData];
+//     updated[idx][name] = value;
+//     setTableData(updated);
+//   }
+// };
 const handleRowChange = (idx, e) => {
   const { name, value } = e.target;
-
   if (name === 'priority') {
-    // Allow only numerical values for priority
-    const cleanedValue = value.replace(/[^0-9]/g, ''); // Replace non-numeric characters
+    // Only allow numbers
+    const cleanedValue = value.replace(/[^0-9]/g, '');
     const updated = [...tableData];
     updated[idx][name] = cleanedValue;
     setTableData(updated);
@@ -1247,8 +1266,8 @@ const handleRowChange = (idx, e) => {
     updated[idx][name] = value;
     setTableData(updated);
   }
-};
-
+};        
+  
   const handleEditRow = (idx) => {
     setEditingIndex(idx);
   };
