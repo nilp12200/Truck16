@@ -1800,12 +1800,13 @@ export default function TruckTransaction() {
 
 const handleSubmit = async () => {
   setMessage('');
-
-  // Ensure amountPerTon has a value if not provided
+  
+  // Check if amountPerTon is empty, and if so, assign a default value
   if (!formData.amountPerTon) {
-    setFormData({ ...formData, amountPerTon: '0' });  // or another default value if necessary
+    setFormData({ ...formData, amountPerTon: '0' });  // Set default value here
   }
 
+  // Validate form after setting the default value (if needed)
   if (!validateForm()) return;
 
   let dataToSubmit = [...tableData];
