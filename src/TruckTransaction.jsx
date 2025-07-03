@@ -1228,11 +1228,11 @@ const handleChange = (e) => {
     setNewRow({ ...newRow, [e.target.name]: e.target.value });
   };
 
-  const handleRowChange = (idx, e) => {
-    const updated = [...tableData];
-    updated[idx][e.target.name] = e.target.value;
-    setTableData(updated);
-  };
+  // const handleRowChange = (idx, e) => {
+  //   const updated = [...tableData];
+  //   updated[idx][e.target.name] = e.target.value;
+  //   setTableData(updated);
+  // };
 const handleRowChange = (idx, e) => {
   const { name, value } = e.target;
 
