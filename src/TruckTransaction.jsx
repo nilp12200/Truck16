@@ -1413,9 +1413,7 @@ export default function TruckTransaction() {
           {['transactionDate', 'cityName', 'transporter'].map((field) => (
             <div key={field}>
               <label className="font-medium text-slate-700 mb-1
-
-
-              <label className="font-medium text-slate-700 mb-1 block">
+                                  <label className="font-medium text-slate-700 mb-1 block">
                 {field === 'transactionDate' ? 'Transaction Date' : field === 'cityName' ? 'City Name' : 'Transporter'} 
                 <span className="text-red-500">*</span>
               </label>
@@ -1629,3 +1627,4 @@ export default function TruckTransaction() {
     </div>
   );
 }
+
