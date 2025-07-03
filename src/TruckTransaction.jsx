@@ -1194,6 +1194,225 @@
 
 
 // above is working perfect/////////////////////////////////////////
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useLocation } from 'react-router-dom';
+import CancelButton from './CancelButton';
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+export default function TruckTransaction() {
+  const location = useLocation();
+
+  const [formData, setFormData] = useState({
+    transactionId: null,
+    truckNo: '',
+    transactionDate: '',
+    cityName: '',
+    transporter: '',
+    amountPerTon: '',
+    truckWeight: '',
+    deliverPoint: '',
+    remarks: ''
+  });
+
+  const [plantList, setPlantList] = useState([]);
+  const [tableData, setTableData] = useState([]);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [newRow, setNewRow] = useState({
+    detailId: null,
+    plantName: '',
+    loadingSlipNo: '',
+    qty: '',
+    priority: '',
+    remarks: '',
+    freight: 'To Pay'
+  });
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const truckNo = location?.state?.truckNo;
+    if (truckNo) fetchTruckDetails(truckNo);
+  }, [location?.state?.truckNo]);
+
+  useEffect(() => {
+    axios.get(`${API_URL}/api/plants`)
+      .then(res => setPlantList(res.data))
+      .catch(err => console.error('Error fetching plants:', err));
+  }, []);
+
+  const fetchTruckDetails = async (truckNo) => {
+    try {
+      const res = await axios.get(`${API_URL}/api/truck-transaction/${truckNo}`);
+      const { master, details } = res.data;
+      setFormData({
+        transactionId: master.transactionid,
+        truckNo: master.truckno,
+        transactionDate: master.transactiondate?.split('T')[0] || '',
+        cityName: master.cityname,
+        transporter: master.transporter,
+        amountPerTon: master.amountperton,
+        truckWeight: master.truckweight,
+        deliverPoint: master.deliverpoint,
+        remarks: master.remarks
+      });
+      setTableData(details.map(row => ({
+        detailId: row.detailid,
+        plantName: row.plantname,
+        loadingSlipNo: row.loadingslipno,
+        qty: row.qty,
+        priority: row.priority,
+        remarks: row.remarks,
+        freight: row.freight
+      })));
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setMessage('🚫 Truck is already in transport. Please complete Check-Out first.');
+      } else if (err.response?.status === 404) {
+        setMessage('Truck not found. You can create a new transaction.');
+      } else {
+        console.error('Error loading truck details:', err);
+        setMessage('❌ Failed to load truck details.');
+      }
+    }
+  };
+
+  const handleChange = (e) => {
+    let { name, value } = e.target;
+    if (name === 'truckNo') {
+      value = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      let formatted = '';
+      if (value.length > 0) formatted += value.substring(0, 2);
+      if (value.length > 2) formatted += '-' + value.substring(2, 4);
+      if (value.length > 4) formatted += '-' + value.substring(4, 6);
+      if (value.length > 6) formatted += '-' + value.substring(6, 10);
+      setFormData({ ...formData, truckNo: formatted });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleNewRowChange = (e) => {
+    setNewRow({ ...newRow, [e.target.name]: e.target.value });
+  };
+
+  const handleRowChange = (idx, e) => {
+    const updated = [...tableData];
+    updated[idx][e.target.name] = e.target.value;
+    setTableData(updated);
+  };
+
+  const handleEditRow = (idx) => {
+    setEditingIndex(idx);
+  };
+
+  const handleUpdateRow = (idx) => {
+    const updatedPriority = tableData[idx].priority;
+    const duplicate = tableData.some((row, i) => i !== idx && row.priority === updatedPriority);
+    if (duplicate) {
+      alert(`Priority ${updatedPriority} already exists in another row. Please choose a different priority.`);
+      return;
+    }
+    setEditingIndex(null);
+  };
+
+  const handleDeleteRow = (idx) => {
+    setTableData(tableData.filter((_, i) => i !== idx));
+    setEditingIndex(null);
+  };
+
+  const addOrUpdateRow = () => {
+    if (!newRow.plantName || !newRow.loadingSlipNo || !newRow.qty) {
+      alert("Please fill required fields.");
+      return;
+    }
+
+    const selectedPlants = tableData.map(r => r.plantName);
+    if (selectedPlants.includes(newRow.plantName)) {
+      alert(`Plant ${newRow.plantName} is already selected.`);
+      return;
+    }
+
+    const existingPriorities = tableData.map(r => r.priority);
+    if (existingPriorities.includes(newRow.priority)) {
+      alert(`Priority ${newRow.priority} already exists. Please choose a different priority.`);
+      return;
+    }
+
+    setTableData([...tableData, { ...newRow, detailId: null }]);
+    setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
+  };
+
+  const handleSubmit = async () => {
+    let dataToSubmit = [...tableData];
+    const isNewRowFilled = newRow.plantName || newRow.loadingSlipNo || newRow.qty || newRow.priority || newRow.remarks;
+    if (isNewRowFilled) {
+      if (!newRow.plantName || !newRow.loadingSlipNo || !newRow.qty) {
+        alert("Please fill all required fields in the new row before submitting.");
+        return;
+      }
+      const selectedPlants = tableData.map(r => r.plantName);
+      if (selectedPlants.includes(newRow.plantName)) {
+        alert(`Plant ${newRow.plantName} is already selected.`);
+        return;
+      }
+      const existingPriorities = tableData.map(r => r.priority);
+      if (existingPriorities.includes(newRow.priority)) {
+        alert(`Priority ${newRow.priority} already exists. Please choose a different priority.`);
+        return;
+      }
+      dataToSubmit.push({ ...newRow, detailId: null });
+    }
+
+    try {
+      const response = await axios.post(`${API_URL}/api/truck-transaction`, { formData, tableData: dataToSubmit });
+      if (response.data.success) {
+        setMessage('✅ Transaction saved successfully!');
+        setFormData({
+          transactionId: null, truckNo: '', transactionDate: '', cityName: '',
+          transporter: '', amountPerTon: '', truckWeight: '', deliverPoint: '', remarks: ''
+        });
+        setTableData([]);
+        setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
+      } else {
+        setMessage('❌ Error saving transaction.');
+      }
+    } catch (error) {
+      if (error.response?.status === 409) {
+        setMessage('🚫 Truck is already in transport. Please complete Check-Out first.');
+      } else {
+        console.error('Submit error:', error);
+        setMessage('❌ Server error while submitting data.');
+      }
+    }
+  };
+
+  const selectedPlants = tableData.map((r, idx) => idx === editingIndex ? null : r.plantName);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-gray-50 py-8">
+      <CancelButton />
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10">
+        <h1 className="text-3xl font-bold text-center text-slate-800 mb-8 tracking-wide">Truck Transaction</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label className="font-medium text-slate-700 mb-1 block">
+              Truck No <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="truckNo"
+              maxLength={13}
+              value={formData.truckNo}
+              onChange={handleChange}
+              placeholder="e.g., GJ-01-AB-1234"
+              className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
+          {['transactionDate', 'cityName', 'transporter'].map((field) => (
+            <div key={field}>
+              <label className="font-medium text-slate-700 mb-1
 
 
               <label className="font-medium text-slate-700 mb-1 block">
