@@ -1523,7 +1523,7 @@ const handleRowChange = (idx, e) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           {[
-            { field: 'amountPerTon', label: 'Amount Per Ton', required: true },
+            { field: 'amountPerTon', label: 'Amount Per Ton' },
             { field: 'deliverPoint', label: 'Deliver Point', required: true },
             { field: 'truckWeight', label: 'Truck Weight (In Ton)', required: true }
           ].map(({ field, label, required }) => (
