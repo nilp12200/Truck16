@@ -1211,28 +1211,36 @@ const handleChange = (e) => {
     // Convert truckNo to uppercase and allow alphanumeric (max 11 chars)
     value = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 11).toUpperCase();
     setFormData({ ...formData, truckNo: value });
-  } else if (name === 'priority') {
-    // Allow only numerical values for priority
+  } else if (name === 'priority' || name === 'qty') {
+    // Allow only numerical values for priority and qty
     value = value.replace(/[^0-9]/g, ''); // Replace non-numeric characters
-    setTableData((prevData) => {
-      const updatedData = [...prevData];
-      updatedData[editingIndex][name] = value;
-      return updatedData;
-    });
+    if (name === 'priority') {
+      setTableData((prevData) => {
+        const updatedData = [...prevData];
+        updatedData[editingIndex][name] = value;
+        return updatedData;
+      });
+    } else {
+      // If it's 'qty', update formData (in case Qty is not in the table)
+      setFormData({ ...formData, [name]: value });
+    }
   } else {
     setFormData({ ...formData, [name]: value });
   }
 };
 
- const handleNewRowChange = (e) => {
+
+const handleNewRowChange = (e) => {
   const { name, value } = e.target;
-  if (name === 'priority') {
-    // Only allow numbers
-    setNewRow({ ...newRow, [name]: value.replace(/[^0-9]/g, '') });
-  } else {
-    setNewRow({ ...newRow, [name]: value });
+  let cleanedValue = value;
+
+  if (name === 'priority' || name === 'qty') {
+    cleanedValue = value.replace(/[^0-9]/g, '');
   }
+
+  setNewRow({ ...newRow, [name]: cleanedValue });
 };
+
 
   // const handleRowChange = (idx, e) => {
   //   const updated = [...tableData];
@@ -1255,19 +1263,18 @@ const handleChange = (e) => {
 // };
 const handleRowChange = (idx, e) => {
   const { name, value } = e.target;
-  if (name === 'priority') {
+  let cleanedValue = value;
+
+  if (name === 'priority' || name === 'qty') {
     // Only allow numbers
-    const cleanedValue = value.replace(/[^0-9]/g, '');
-    const updated = [...tableData];
-    updated[idx][name] = cleanedValue;
-    setTableData(updated);
-  } else {
-    const updated = [...tableData];
-    updated[idx][name] = value;
-    setTableData(updated);
+    cleanedValue = value.replace(/[^0-9]/g, '');
   }
-};        
-  
+
+  const updated = [...tableData];
+  updated[idx][name] = cleanedValue;
+  setTableData(updated);
+};
+
   const handleEditRow = (idx) => {
     setEditingIndex(idx);
   };
