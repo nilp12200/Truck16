@@ -1125,4 +1125,4 @@ export default function TruckTransaction() {
       </div>
     </div>
   );
-}/
+}
