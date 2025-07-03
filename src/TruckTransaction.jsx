@@ -1570,10 +1570,17 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function TruckTransaction() {
   const location = useLocation();
 
-  const [formData, setFormData] = useState({
-    transactionId: null, truckNo: '', transactionDate: '', cityName: '',
-    transporter: '', amountPerTon: '', truckWeight: '', deliverPoint: '', remarks: ''
-  });
+const [formData, setFormData] = useState({
+  transactionId: null,
+  truckNo: '',
+  transactionDate: '',
+  cityName: '',
+  transporter: '',
+  amountPerTon: '0',  // Default value set here
+  truckWeight: '',
+  deliverPoint: '',
+  remarks: ''
+});
 
   const [plantList, setPlantList] = useState([]);
   const [tableData, setTableData] = useState([]);
@@ -1995,7 +2002,15 @@ const handleSubmit = async () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           {[
-            { field: 'amountPerTon', label: 'Amount Per Ton', required: false},
+           <input
+  type="number"  // Use number type to handle numeric inputs
+  name="amountPerTon"
+  value={formData.amountPerTon}
+  onChange={handleChange}
+  placeholder="Enter Amount Per Ton"
+  className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+/>
+
             { field: 'deliverPoint', label: 'Deliver Point', required: true },
             { field: 'truckWeight', label: 'Truck Weight (In Ton)', required: true }
           ].map(({ field, label, required }) => (
