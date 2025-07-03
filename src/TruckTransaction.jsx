@@ -1204,21 +1204,16 @@ export default function TruckTransaction() {
     }
   };
 
-  const handleChange = (e) => {
-    let { name, value } = e.target;
-    if (name === 'truckNo') {
-      value = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-      let formatted = '';
-      if (value.length > 0) formatted += value.substring(0, 2);
-      if (value.length > 2) formatted += '-' + value.substring(2, 4);
-      if (value.length > 4) formatted += '-' + value.substring(4, 6);
-      if (value.length > 6) formatted += '-' + value.substring(6, 10);
-      setFormData({ ...formData, truckNo: formatted });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
-
+ const handleChange = (e) => {
+  let { name, value } = e.target;
+  if (name === 'truckNo') {
+    // Only allow alphanumeric, max 11 chars
+    value = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 11);
+    setFormData({ ...formData, truckNo: value });
+  } else {
+    setFormData({ ...formData, [name]: value });
+  }
+};
   const handleNewRowChange = (e) => {
     setNewRow({ ...newRow, [e.target.name]: e.target.value });
   };
@@ -1355,9 +1350,15 @@ export default function TruckTransaction() {
             <label className="font-medium text-slate-700 mb-1 block">
               Truck No {requiredStar}
             </label>
-            <input type="text" name="truckNo" maxLength={13} value={formData.truckNo} onChange={handleChange}
-              placeholder="e.g., GJ-01-AB-1234"
-              className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+           <input
+  type="text"
+  name="truckNo"
+  maxLength={11}
+  value={formData.truckNo}
+  onChange={handleChange}
+  placeholder="Enter Truck No"
+  className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+/>
           </div>
           {[
             { field: 'transactionDate', label: 'Transaction Date', type: 'date', required: true },
