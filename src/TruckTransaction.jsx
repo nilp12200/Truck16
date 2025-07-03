@@ -1312,7 +1312,7 @@ const handleRowChange = (idx, e) => {
 
   // --- Validation logic for all required fields ---
   const requiredFormFields = [
-    'truckNo', 'transactionDate', 'cityName', 'amountPerTon', 'deliverPoint', 'truckWeight'
+    'truckNo', 'transactionDate', 'cityName', 'deliverPoint', 'truckWeight'
   ];
   const requiredTableFields = ['plantName', 'loadingSlipNo', 'qty', 'priority'];
 
