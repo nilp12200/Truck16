@@ -1521,7 +1521,7 @@ const handleRowChange = (idx, e) => {
           Add Row
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+{/*         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           {[
             { field: 'amountPerTon', label: 'Amount Per Ton' },
             { field: 'deliverPoint', label: 'Deliver Point', required: true },
@@ -1535,7 +1535,23 @@ const handleRowChange = (idx, e) => {
                 className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
             </div>
           ))}
-        </div>
+        </div> */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+  {[  
+    { field: 'amountPerTon', label: 'Amount Per Ton', required: false },  {/* changed required to false */}
+    { field: 'deliverPoint', label: 'Deliver Point', required: true },
+    { field: 'truckWeight', label: 'Truck Weight (In Ton)', required: true }
+  ].map(({ field, label, required }) => (
+    <div key={field}>
+      <label className="font-medium text-slate-700 mb-1 block">
+        {label}{required && requiredStar}
+      </label>
+      <input name={field} value={formData[field]} onChange={handleChange}
+        className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+    </div>
+  ))}
+</div>
+
 
         <label className="font-medium text-slate-700 mb-1 block">Remarks</label>
         <textarea name="remarks" value={formData.remarks} onChange={handleChange} rows="3"
