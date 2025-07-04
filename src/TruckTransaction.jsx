@@ -1414,7 +1414,7 @@ const requiredFormFields = [
           {[
             { field: 'transactionDate', label: 'Transaction Date', type: 'date', required: true },
             { field: 'cityName', label: 'City Name', type: 'text', required: true },
-            { field: 'transporter', label: 'Transporter', type: 'text', required: false }
+            { field: 'transporter', label: 'Transporter', type: 'text'}
           ].map(({ field, label, type, required }) => (
             <div key={field}>
               <label className="font-medium text-slate-700 mb-1 block">
@@ -1530,7 +1530,7 @@ const requiredFormFields = [
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           {[
-            { field: 'amountPerTon', label: 'Amount Per Ton', required: false},
+            { field: 'amountPerTon', label: 'Amount Per Ton'},
             { field: 'deliverPoint', label: 'Deliver Point', required: true },
             { field: 'truckWeight', label: 'Truck Weight (In Ton)', required: true }
           ].map(({ field, label, required }) => (
