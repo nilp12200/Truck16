@@ -9900,65 +9900,130 @@ function GateKeeper() {
     }
   };
 
+  // const handleSubmit = async (type) => {
+  //   const { truckNo, dispatchDate, invoiceNo } = formData;
+
+  //   if (!selectedPlant) return toast.warn('Please select a plant first.');
+  //   if (!truckNo) return toast.warn('🚛 Please select a truck number.');
+  //   if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
+
+  //   try {
+  //     const priorityRes = await axios.get(`${API_URL}/api/check-priority-status`, {
+  //       params: { truckNo, plantName: selectedPlant }
+  //     });
+  //     const { hasPending, canProceed, nextPriority, nextPlant } = priorityRes.data;
+
+  //     if (hasPending && !canProceed) {
+  //       return toast.error(`🚫 Priority ${nextPriority} at ${nextPlant} must be completed first.`);
+  //     }
+  //   } catch (error) {
+  //     console.error('Priority check error:', error);
+  //     toast.error('❌ Error checking priority status');
+  //     return;
+  //   }
+
+  //   if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+  //     return toast.error('🚫 This truck is already checked in!');
+  //   }
+
+  //   if (type === 'Check Out' && !checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+  //     return toast.warn('🚛 Please check in the truck first before checking out.');
+  //   }
+
+  //   try {
+  //     const response = await axios.post(`${API_URL}/api/update-truck-status`, {
+  //       truckNo,
+  //       plantName: selectedPlant,
+  //       type,
+  //       dispatchDate,
+  //       invoicenumber: type === 'Check Out' ? invoiceNo : '',  
+  //       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
+  //     });
+
+  //     if (response.data.message?.includes('✅')) {
+  //       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+  //       if (type === 'Check Out') {
+  //         setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+  //       } else {
+  //         setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
+  //       }
+
+  //       toast.success(response.data.message);
+  //       setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
+  //       setQuantityPanels([]);
+  //     } else {
+  //       toast.error(response.data.message || 'Failed to update status');
+  //     }
+  //   } catch (err) {
+  //     console.error('Error:', err);
+  //     toast.error(err.response?.data?.message || 'Something went wrong.');
+  //   }
+  // };
   const handleSubmit = async (type) => {
-    const { truckNo, dispatchDate, invoiceNo } = formData;
+  const { truckNo, dispatchDate, invoiceNo } = formData;
 
-    if (!selectedPlant) return toast.warn('Please select a plant first.');
-    if (!truckNo) return toast.warn('🚛 Please select a truck number.');
-    if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
+  // Get the current date and time in IST
+  const currentDateTime = getISTDateTime();
 
-    try {
-      const priorityRes = await axios.get(`${API_URL}/api/check-priority-status`, {
-        params: { truckNo, plantName: selectedPlant }
-      });
-      const { hasPending, canProceed, nextPriority, nextPlant } = priorityRes.data;
+  if (!selectedPlant) return toast.warn('Please select a plant first.');
+  if (!truckNo) return toast.warn('🚛 Please select a truck number.');
+  if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
 
-      if (hasPending && !canProceed) {
-        return toast.error(`🚫 Priority ${nextPriority} at ${nextPlant} must be completed first.`);
-      }
-    } catch (error) {
-      console.error('Priority check error:', error);
-      toast.error('❌ Error checking priority status');
-      return;
+  try {
+    const priorityRes = await axios.get(`${API_URL}/api/check-priority-status`, {
+      params: { truckNo, plantName: selectedPlant }
+    });
+    const { hasPending, canProceed, nextPriority, nextPlant } = priorityRes.data;
+
+    if (hasPending && !canProceed) {
+      return toast.error(`🚫 Priority ${nextPriority} at ${nextPlant} must be completed first.`);
     }
+  } catch (error) {
+    console.error('Priority check error:', error);
+    toast.error('❌ Error checking priority status');
+    return;
+  }
 
-    if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
-      return toast.error('🚫 This truck is already checked in!');
-    }
+  if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+    return toast.error('🚫 This truck is already checked in!');
+  }
 
-    if (type === 'Check Out' && !checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
-      return toast.warn('🚛 Please check in the truck first before checking out.');
-    }
+  if (type === 'Check Out' && !checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+    return toast.warn('🚛 Please check in the truck first before checking out.');
+  }
 
-    try {
-      const response = await axios.post(`${API_URL}/api/update-truck-status`, {
-        truckNo,
-        plantName: selectedPlant,
-        type,
-        dispatchDate,
-        invoicenumber: type === 'Check Out' ? invoiceNo : '',  
-        quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
-      });
+  try {
+    const response = await axios.post(`${API_URL}/api/update-truck-status`, {
+      truckNo,
+      plantName: selectedPlant,
+      type,
+      dispatchDate,
+      invoicenumber: type === 'Check Out' ? invoiceNo : '',
+      checkInDateTime: type === 'Check In' ? currentDateTime : '',  // Send current date and time for Check In
+      checkOutDateTime: type === 'Check Out' ? currentDateTime : '',  // Send current date and time for Check Out
+      quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
+    });
 
-      if (response.data.message?.includes('✅')) {
-        setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
-        if (type === 'Check Out') {
-          setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
-        } else {
-          setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
-        }
-
-        toast.success(response.data.message);
-        setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
-        setQuantityPanels([]);
+    if (response.data.message?.includes('✅')) {
+      setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+      if (type === 'Check Out') {
+        setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
       } else {
-        toast.error(response.data.message || 'Failed to update status');
+        setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
       }
-    } catch (err) {
-      console.error('Error:', err);
-      toast.error(err.response?.data?.message || 'Something went wrong.');
+
+      toast.success(response.data.message);
+      setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
+      setQuantityPanels([]);
+    } else {
+      toast.error(response.data.message || 'Failed to update status');
     }
-  };
+  } catch (err) {
+    console.error('Error:', err);
+    toast.error(err.response?.data?.message || 'Something went wrong.');
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 p-6">
