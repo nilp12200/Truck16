@@ -9571,25 +9571,95 @@ function GateKeeper() {
   //   }
   // };
 
+// const handleSubmit = async (type) => {
+//   const { truckNo, dispatchDate, invoiceNo } = formData;
+
+//   if (!selectedPlant) return toast.warn('Please select a plant first.');
+//   if (!truckNo) return toast.warn('🚛 Please select a truck number.');
+//   if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
+
+//   try {
+//     const response = await axios.post(`${API_URL}/api/update-truck-status`, {
+//       truckNo,
+//       plantName: selectedPlant,
+//       type,
+//       dispatchDate,
+//       invoiceNo,  // Ensure invoiceNo is sent when Check Out is clicked
+//       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
+//     });
+
+//     if (response.data.message?.includes('✅')) {
+//       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+//       if (type === 'Check Out') {
+//         setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+//       } else {
+//         setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
+//       }
+
+//       toast.success(response.data.message);
+//       setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
+//       setQuantityPanels([]);
+//     } else {
+//       toast.error(response.data.message || 'Failed to update status');
+//     }
+//   } catch (err) {
+//     console.error('Error:', err);
+//     toast.error(err.response?.data?.message || 'Something went wrong.');
+//   }
+// };
 const handleSubmit = async (type) => {
   const { truckNo, dispatchDate, invoiceNo } = formData;
 
+  // Validate required fields
   if (!selectedPlant) return toast.warn('Please select a plant first.');
   if (!truckNo) return toast.warn('🚛 Please select a truck number.');
+  
+  // Ensure the invoice number is provided for Check Out
   if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
 
+  // 1. Check if there is any pending priority
   try {
+    const priorityRes = await axios.get(`${API_URL}/api/check-priority-status`, {
+      params: { truckNo, plantName: selectedPlant }
+    });
+    const { hasPending, canProceed, nextPriority, nextPlant } = priorityRes.data;
+
+    // If there is a pending priority and it can't proceed, show an error
+    if (hasPending && !canProceed) {
+      return toast.error(`🚫 Priority ${nextPriority} at ${nextPlant} must be completed first.`);
+    }
+  } catch (error) {
+    console.error('Priority check error:', error);
+    toast.error('❌ Error checking priority status');
+    return;
+  }
+
+  // 2. Handle Check In
+  if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+    return toast.error('🚫 This truck is already checked in!');
+  }
+
+  // 3. Handle Check Out
+  if (type === 'Check Out' && !checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+    return toast.warn('🚛 Please check in the truck first before checking out.');
+  }
+
+  try {
+    // 4. Send request to update truck status (either Check In or Check Out)
     const response = await axios.post(`${API_URL}/api/update-truck-status`, {
       truckNo,
       plantName: selectedPlant,
       type,
       dispatchDate,
-      invoiceNo,  // Ensure invoiceNo is sent when Check Out is clicked
+      invoiceNo: type === 'Check Out' ? invoiceNo : '',  // Include invoiceNo only for Check Out
       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
     });
 
+    // 5. Handle successful response
     if (response.data.message?.includes('✅')) {
       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+
+      // If Check Out, remove from checked-in list
       if (type === 'Check Out') {
         setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
       } else {
@@ -9597,6 +9667,8 @@ const handleSubmit = async (type) => {
       }
 
       toast.success(response.data.message);
+
+      // Reset form after success
       setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
       setQuantityPanels([]);
     } else {
