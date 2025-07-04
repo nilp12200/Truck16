@@ -9392,6 +9392,395 @@
 // }
 
 // export default GateKeeper;
+// import React, { useEffect, useState } from 'react';
+// import axios from 'axios';
+// import { ToastContainer, toast } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
+// import truckImage from './assets/Truck.png';
+// import { useNavigate } from 'react-router-dom';
+// import CancelButton from './CancelButton';
+
+// const API_URL = import.meta.env.VITE_API_URL;
+
+// function GateKeeper() {
+//   const navigate = useNavigate();
+//   const [formData, setFormData] = useState({
+//     truckNo: '',
+//     dispatchDate: new Date().toISOString().split('T')[0],
+//     invoiceNo: '',
+//     remarks: 'This is a system-generated remark.',
+//   });
+
+//   const [plantList, setPlantList] = useState([]);
+//   const [selectedPlant, setSelectedPlant] = useState('');
+//   const [truckNumbers, setTruckNumbers] = useState([]);
+//   const [checkedInTrucks, setCheckedInTrucks] = useState([]);
+//   const [quantityPanels, setQuantityPanels] = useState([]);
+//   const [fromPlant, setFromPlant] = useState('—');
+//   const [nextPlant, setNextPlant] = useState('—');
+
+//   useEffect(() => {
+//     const userId = localStorage.getItem('userId');
+//     const role = localStorage.getItem('role');
+//     const allowedPlantsRaw = localStorage.getItem('allowedPlants') || '';
+//     const allowedPlants = allowedPlantsRaw.split(',').map(p => p.trim()).filter(Boolean);
+
+//     axios.get(`${API_URL}/api/plants`, {
+//       headers: { userid: userId, role }
+//     })
+//       .then(res => {
+//         const filtered = res.data.filter(plant => {
+//           const pid = String(plant.PlantID || plant.PlantId || plant.plantid || '');
+//           return allowedPlants.includes(pid) || role?.toLowerCase() === 'admin';
+//         });
+//         setPlantList(filtered);
+//       })
+//       .catch(err => {
+//         console.error('❌ Error fetching plants:', err);
+//         toast.error('Failed to fetch plant list');
+//       });
+//   }, []);
+
+//   useEffect(() => {
+//     if (!selectedPlant) return;
+
+//     setFormData(prev => ({
+//       ...prev,
+//       truckNo: '',
+//       dispatchDate: new Date().toISOString().split('T')[0],
+//       invoiceNo: '',
+//       remarks: 'This is a system-generated remark.'
+//     }));
+//     setCheckedInTrucks([]);
+//     setQuantityPanels([]);
+
+//     axios.get(`${API_URL}/api/trucks?plantName=${selectedPlant}`)
+//       .then(res => setTruckNumbers(res.data))
+//       .catch(err => console.error('Error fetching trucks:', err));
+
+//     axios.get(`${API_URL}/api/checked-in-trucks?plantName=${selectedPlant}`)
+//       .then(res => setCheckedInTrucks(res.data))
+//       .catch(err => console.error('Error fetching checked-in trucks:', err));
+//   }, [selectedPlant]);
+
+//   const getTruckNo = truck => truck.TruckNo || truck.truckno || truck.truck_no || '';
+//   const getPlantName = plant => typeof plant === 'string' ? plant : (plant.PlantName || plant.plantname || 'Unknown');
+
+//   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+//   const handlePlantChange = (e) => {
+//     setSelectedPlant(e.target.value);
+//   };
+
+//   const handleTruckSelect = async (truckNo) => {
+//     setFormData(prev => ({ ...prev, truckNo }));
+
+//     try {
+//       // Fetch remarks and quantity details
+//       const remarksRes = await axios.get(`${API_URL}/api/fetch-remarks`, {
+//         params: { plantName: selectedPlant, truckNo }
+//       });
+//       const quantityRes = await axios.get(`${API_URL}/api/truck-plant-quantities?truckNo=${truckNo}`);
+//       const sorted = [...quantityRes.data].sort((a, b) => a.priority - b.priority);
+//       setQuantityPanels(sorted);
+
+//       // Set remarks and quantity panels
+//       setFormData(prev => ({
+//         ...prev,
+//         remarks: remarksRes.data.remarks || 'No remarks available.',
+//       }));
+
+//       // Set from and next plants
+//       const currentIndex = sorted.findIndex(p => p.plantname === selectedPlant);
+//       setFromPlant(currentIndex > 0 ? sorted[currentIndex - 1]?.plantname : '—');
+//       setNextPlant(currentIndex >= 0 && currentIndex < sorted.length - 1 ? sorted[currentIndex + 1]?.plantname : '—');
+//     } catch (err) {
+//       console.error('Error fetching data:', err);
+//       setFormData(prev => ({ ...prev, remarks: 'No remarks available or error fetching remarks.' }));
+//     }
+//   };
+
+//   // Show the invoice number field only when the truck is checked-in
+//   const handleCheckedInClick = (truckNo) => {
+//     handleTruckSelect(truckNo); // Reuse the truck selection logic
+    
+//     // Check if the truck is already checked in
+//     const checkedInTruck = checkedInTrucks.find(t => getTruckNo(t) === truckNo);
+    
+//     // If checked-in, show the invoice number field
+//     if (checkedInTruck) {
+//       setFormData(prev => ({
+//         ...prev,
+//         invoiceNo: checkedInTruck.invoiceNo || '',  // Set invoice number
+//       }));
+//     }
+//   };
+
+//   // const handleSubmit = async (type) => {
+//   //   const { truckNo, dispatchDate, invoiceNo } = formData;
+
+//   //   if (!selectedPlant) return toast.warn('Please select a plant first.');
+//   //   if (!truckNo) return toast.warn('🚛 Please select a truck number.');
+//   //   if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
+
+//   //   try {
+//   //     const priorityRes = await axios.get(`${API_URL}/api/check-priority-status`, {
+//   //       params: { truckNo, plantName: selectedPlant }
+//   //     });
+//   //     const { hasPending, canProceed, nextPriority, nextPlant } = priorityRes.data;
+//   //     if (hasPending && !canProceed) {
+//   //       return toast.error(`🚫 Priority ${nextPriority} at ${nextPlant} must be completed first.`);
+//   //     }
+//   //   } catch (error) {
+//   //     console.error('Priority check error:', error);
+//   //     toast.error('❌ Error checking priority status');
+//   //     return;
+//   //   }
+
+//   //   if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+//   //     return toast.error('🚫 This truck is already checked in!');
+//   //   }
+
+//   //   try {
+//   //     const response = await axios.post(`${API_URL}/api/update-truck-status`, {
+//   //       truckNo,
+//   //       plantName: selectedPlant,
+//   //       type,
+//   //       dispatchDate,
+//   //       invoiceNo: type === 'Check Out' ? invoiceNo : '',  // Include invoiceNo only for Check Out
+//   //       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
+//   //     });
+
+//   //     if (response.data.message?.includes('✅')) {
+//   //       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+//   //       if (type === 'Check Out') {
+//   //         setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+//   //       } else {
+//   //         setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
+//   //       }
+
+//   //       toast.success(response.data.message);
+//   //       setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
+//   //       setQuantityPanels([]);
+//   //     } else {
+//   //       toast.error(response.data.message || 'Failed to update status');
+//   //     }
+//   //   } catch (err) {
+//   //     console.error('Error:', err);
+//   //     toast.error(err.response?.data?.message || 'Something went wrong.');
+//   //   }
+//   // };
+
+// // const handleSubmit = async (type) => {
+// //   const { truckNo, dispatchDate, invoiceNo } = formData;
+
+// //   if (!selectedPlant) return toast.warn('Please select a plant first.');
+// //   if (!truckNo) return toast.warn('🚛 Please select a truck number.');
+// //   if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
+
+// //   try {
+// //     const response = await axios.post(`${API_URL}/api/update-truck-status`, {
+// //       truckNo,
+// //       plantName: selectedPlant,
+// //       type,
+// //       dispatchDate,
+// //       invoiceNo,  // Ensure invoiceNo is sent when Check Out is clicked
+// //       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
+// //     });
+
+// //     if (response.data.message?.includes('✅')) {
+// //       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+// //       if (type === 'Check Out') {
+// //         setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+// //       } else {
+// //         setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
+// //       }
+
+// //       toast.success(response.data.message);
+// //       setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
+// //       setQuantityPanels([]);
+// //     } else {
+// //       toast.error(response.data.message || 'Failed to update status');
+// //     }
+// //   } catch (err) {
+// //     console.error('Error:', err);
+// //     toast.error(err.response?.data?.message || 'Something went wrong.');
+// //   }
+// // };
+// const handleSubmit = async (type) => {
+//   const { truckNo, dispatchDate, invoicenumber } = formData;
+
+//   // Validate required fields
+//   if (!selectedPlant) return toast.warn('Please select a plant first.');
+//   if (!truckNo) return toast.warn('🚛 Please select a truck number.');
+  
+//   // Ensure the invoice number is provided for Check Out
+//   if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
+
+//   // 1. Check if there is any pending priority
+//   try {
+//     const priorityRes = await axios.get(`${API_URL}/api/check-priority-status`, {
+//       params: { truckNo, plantName: selectedPlant }
+//     });
+//     const { hasPending, canProceed, nextPriority, nextPlant } = priorityRes.data;
+
+//     // If there is a pending priority and it can't proceed, show an error
+//     if (hasPending && !canProceed) {
+//       return toast.error(`🚫 Priority ${nextPriority} at ${nextPlant} must be completed first.`);
+//     }
+//   } catch (error) {
+//     console.error('Priority check error:', error);
+//     toast.error('❌ Error checking priority status');
+//     return;
+//   }
+
+//   // 2. Handle Check In
+//   if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+//     return toast.error('🚫 This truck is already checked in!');
+//   }
+
+//   // 3. Handle Check Out
+//   if (type === 'Check Out' && !checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+//     return toast.warn('🚛 Please check in the truck first before checking out.');
+//   }
+
+//   try {
+//     // 4. Send request to update truck status (either Check In or Check Out)
+//     const response = await axios.post(`${API_URL}/api/update-truck-status`, {
+//       truckNo,
+//       plantName: selectedPlant,
+//       type,
+//       dispatchDate,
+//       invoicenumber: type === 'Check Out' ? invoicenumber : '',  // Include invoiceNo only for Check Out
+//       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
+//     });
+
+//     // 5. Handle successful response
+//     if (response.data.message?.includes('✅')) {
+//       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+
+//       // If Check Out, remove from checked-in list
+//       if (type === 'Check Out') {
+//         setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+//       } else {
+//         setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
+//       }
+
+//       toast.success(response.data.message);
+
+//       // Reset form after success
+//       setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
+//       setQuantityPanels([]);
+//     } else {
+//       toast.error(response.data.message || 'Failed to update status');
+//     }
+//   } catch (err) {
+//     console.error('Error:', err);
+//     toast.error(err.response?.data?.message || 'Something went wrong.');
+//   }
+// };
+
+
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 p-6">
+//       <CancelButton />
+//       <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+//         {/* Left Panel */}
+//         <div className="space-y-4">
+//           <select value={selectedPlant} onChange={handlePlantChange} className="w-full border rounded px-4 py-2">
+//             <option value="">Select Plant</option>
+//             {plantList.map((plant, i) => (
+//               <option key={i} value={getPlantName(plant)}>{getPlantName(plant)}</option>
+//             ))}
+//           </select>
+
+//           <div className="bg-blue-100 rounded p-4 h-64 overflow-y-auto">
+//             <h3 className="font-bold text-blue-700">Truck List</h3>
+//             {truckNumbers.length === 0 && <p className="text-gray-400 italic">No trucks available</p>}
+//             <ul>
+//               {truckNumbers.map((t, i) => (
+//                 <li key={i} onClick={() => handleTruckSelect(getTruckNo(t))} className="cursor-pointer hover:text-blue-600">
+//                   🚛 {getTruckNo(t)}
+//                 </li>
+//               ))}
+//             </ul>
+//           </div>
+//         </div>
+
+//         {/* Center Panel */}
+//         <div className="space-y-4">
+//           <div className="relative h-56 w-full bg-blue-200 rounded-lg overflow-hidden shadow-md">
+//             <div className="absolute bottom-[51px] left-[50px] h-[75px] w-[calc(100%-170px)] max-w-[370px] flex items-end gap-[2px] z-10">
+//               {quantityPanels.map((panel, index) => {
+//                 const height = Math.max(...quantityPanels.map(p => p.quantity || 0), 0) ? (panel.quantity / Math.max(...quantityPanels.map(p => p.quantity || 0))) * 100 : 0;
+//                 const bgColors = ['bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500'];
+//                 return (
+//                   <div
+//                     key={index}
+//                     className={`flex flex-col items-center justify-end text-white text-[10px] ${bgColors[index % bgColors.length]} rounded-t-md transition-transform transform hover:scale-105 hover:shadow-lg cursor-pointer`}
+//                     style={{ height: `${height}%`, width: `${100 / quantityPanels.length}%` }}
+//                     title={`${panel.plantname}: ${panel.quantity}`}
+//                   >
+//                     <div className="flex items-center gap-[2px]">
+//                       <span>📦</span>
+//                       <span>{panel.quantity}</span>
+//                     </div>
+//                     <div className="whitespace-nowrap text-[8px]">{panel.plantname}</div>
+//                   </div>
+//                 );
+//               })}
+//             </div>
+//             <img src={truckImage} alt="Truck" className="absolute bottom-0 left-0 w-full h-auto object-contain z-0" style={{ height: '65%' }} />
+//           </div>
+
+//           <div className="col-span-3 flex justify-center gap-6 font-semibold text-sm">
+//             <div>From: <span className="text-blue-800">{fromPlant}</span></div>
+//             <div>Next: <span className="text-green-800">{nextPlant}</span></div>
+//           </div>
+
+//           <input name="truckNo" value={formData.truckNo} onChange={handleChange} placeholder="Truck No" className="w-full border px-4 py-2 rounded" />
+//           <input name="dispatchDate" type="date" value={formData.dispatchDate} onChange={handleChange} className="w-full border px-4 py-2 rounded" />
+
+//           {/* Invoice Number (conditionally displayed for Checkout) */}
+//           {checkedInTrucks.some(t => getTruckNo(t) === formData.truckNo) && (
+//             <input 
+//               name="invoiceNo" 
+//               value={formData.invoiceNo} 
+//               onChange={handleChange} 
+//               placeholder="Invoice No" 
+//               className="w-full border px-4 py-2 rounded" 
+//             />
+//           )}
+
+//           <textarea name="remarks" readOnly value={formData.remarks} className="w-full border px-4 py-2 bg-gray-100 rounded" rows="3" />
+
+//           <div className="flex gap-4">
+//             <button onClick={() => handleSubmit('Check In')} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Check In</button>
+//             <button onClick={() => handleSubmit('Check Out')} className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">Check Out</button>
+//           </div>
+//         </div>
+
+//         {/* Right Panel */}
+//         <div className="bg-green-100 rounded p-4 h-full overflow-y-auto">
+//           <h3 className="font-bold text-green-700 mb-2">Checked In Trucks</h3>
+//           {checkedInTrucks.length === 0 && <p className="text-gray-400 italic">No checked-in trucks</p>}
+//           <ul>
+//             {checkedInTrucks.map((t, i) => (
+//               <li key={i} onClick={() => handleCheckedInClick(getTruckNo(t))} className="cursor-pointer hover:text-green-600">
+//                 ✓ {getTruckNo(t)}
+//               </li>
+//             ))}
+//           </ul>
+//         </div>
+//       </div>
+//       <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
+//     </div>
+//   );
+// }
+
+// export default GateKeeper;
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
@@ -9463,14 +9852,9 @@ function GateKeeper() {
       .catch(err => console.error('Error fetching checked-in trucks:', err));
   }, [selectedPlant]);
 
-  const getTruckNo = truck => truck.TruckNo || truck.truckno || truck.truck_no || '';
-  const getPlantName = plant => typeof plant === 'string' ? plant : (plant.PlantName || plant.plantname || 'Unknown');
-
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handlePlantChange = (e) => {
-    setSelectedPlant(e.target.value);
-  };
+  const handlePlantChange = (e) => setSelectedPlant(e.target.value);
 
   const handleTruckSelect = async (truckNo) => {
     setFormData(prev => ({ ...prev, truckNo }));
@@ -9505,7 +9889,7 @@ function GateKeeper() {
     handleTruckSelect(truckNo); // Reuse the truck selection logic
     
     // Check if the truck is already checked in
-    const checkedInTruck = checkedInTrucks.find(t => getTruckNo(t) === truckNo);
+    const checkedInTruck = checkedInTrucks.find(t => t.TruckNo === truckNo);
     
     // If checked-in, show the invoice number field
     if (checkedInTruck) {
@@ -9516,193 +9900,96 @@ function GateKeeper() {
     }
   };
 
-  // const handleSubmit = async (type) => {
-  //   const { truckNo, dispatchDate, invoiceNo } = formData;
+  const handleSubmit = async (type) => {
+    const { truckNo, dispatchDate, invoiceNo } = formData;
 
-  //   if (!selectedPlant) return toast.warn('Please select a plant first.');
-  //   if (!truckNo) return toast.warn('🚛 Please select a truck number.');
-  //   if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
+    if (!selectedPlant) return toast.warn('Please select a plant first.');
+    if (!truckNo) return toast.warn('🚛 Please select a truck number.');
+    if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
 
-  //   try {
-  //     const priorityRes = await axios.get(`${API_URL}/api/check-priority-status`, {
-  //       params: { truckNo, plantName: selectedPlant }
-  //     });
-  //     const { hasPending, canProceed, nextPriority, nextPlant } = priorityRes.data;
-  //     if (hasPending && !canProceed) {
-  //       return toast.error(`🚫 Priority ${nextPriority} at ${nextPlant} must be completed first.`);
-  //     }
-  //   } catch (error) {
-  //     console.error('Priority check error:', error);
-  //     toast.error('❌ Error checking priority status');
-  //     return;
-  //   }
+    // 1. Check if there is any pending priority
+    try {
+      const priorityRes = await axios.get(`${API_URL}/api/check-priority-status`, {
+        params: { truckNo, plantName: selectedPlant }
+      });
+      const { hasPending, canProceed, nextPriority, nextPlant } = priorityRes.data;
 
-  //   if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
-  //     return toast.error('🚫 This truck is already checked in!');
-  //   }
-
-  //   try {
-  //     const response = await axios.post(`${API_URL}/api/update-truck-status`, {
-  //       truckNo,
-  //       plantName: selectedPlant,
-  //       type,
-  //       dispatchDate,
-  //       invoiceNo: type === 'Check Out' ? invoiceNo : '',  // Include invoiceNo only for Check Out
-  //       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
-  //     });
-
-  //     if (response.data.message?.includes('✅')) {
-  //       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
-  //       if (type === 'Check Out') {
-  //         setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
-  //       } else {
-  //         setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
-  //       }
-
-  //       toast.success(response.data.message);
-  //       setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
-  //       setQuantityPanels([]);
-  //     } else {
-  //       toast.error(response.data.message || 'Failed to update status');
-  //     }
-  //   } catch (err) {
-  //     console.error('Error:', err);
-  //     toast.error(err.response?.data?.message || 'Something went wrong.');
-  //   }
-  // };
-
-// const handleSubmit = async (type) => {
-//   const { truckNo, dispatchDate, invoiceNo } = formData;
-
-//   if (!selectedPlant) return toast.warn('Please select a plant first.');
-//   if (!truckNo) return toast.warn('🚛 Please select a truck number.');
-//   if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
-
-//   try {
-//     const response = await axios.post(`${API_URL}/api/update-truck-status`, {
-//       truckNo,
-//       plantName: selectedPlant,
-//       type,
-//       dispatchDate,
-//       invoiceNo,  // Ensure invoiceNo is sent when Check Out is clicked
-//       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
-//     });
-
-//     if (response.data.message?.includes('✅')) {
-//       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
-//       if (type === 'Check Out') {
-//         setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
-//       } else {
-//         setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
-//       }
-
-//       toast.success(response.data.message);
-//       setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
-//       setQuantityPanels([]);
-//     } else {
-//       toast.error(response.data.message || 'Failed to update status');
-//     }
-//   } catch (err) {
-//     console.error('Error:', err);
-//     toast.error(err.response?.data?.message || 'Something went wrong.');
-//   }
-// };
-const handleSubmit = async (type) => {
-  const { truckNo, dispatchDate, invoicenumber } = formData;
-
-  // Validate required fields
-  if (!selectedPlant) return toast.warn('Please select a plant first.');
-  if (!truckNo) return toast.warn('🚛 Please select a truck number.');
-  
-  // Ensure the invoice number is provided for Check Out
-  if (type === 'Check Out' && !invoiceNo) return toast.warn('🚨 Please enter an invoice number before checking out.');
-
-  // 1. Check if there is any pending priority
-  try {
-    const priorityRes = await axios.get(`${API_URL}/api/check-priority-status`, {
-      params: { truckNo, plantName: selectedPlant }
-    });
-    const { hasPending, canProceed, nextPriority, nextPlant } = priorityRes.data;
-
-    // If there is a pending priority and it can't proceed, show an error
-    if (hasPending && !canProceed) {
-      return toast.error(`🚫 Priority ${nextPriority} at ${nextPlant} must be completed first.`);
-    }
-  } catch (error) {
-    console.error('Priority check error:', error);
-    toast.error('❌ Error checking priority status');
-    return;
-  }
-
-  // 2. Handle Check In
-  if (type === 'Check In' && checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
-    return toast.error('🚫 This truck is already checked in!');
-  }
-
-  // 3. Handle Check Out
-  if (type === 'Check Out' && !checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
-    return toast.warn('🚛 Please check in the truck first before checking out.');
-  }
-
-  try {
-    // 4. Send request to update truck status (either Check In or Check Out)
-    const response = await axios.post(`${API_URL}/api/update-truck-status`, {
-      truckNo,
-      plantName: selectedPlant,
-      type,
-      dispatchDate,
-      invoicenumber: type === 'Check Out' ? invoicenumber : '',  // Include invoiceNo only for Check Out
-      quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
-    });
-
-    // 5. Handle successful response
-    if (response.data.message?.includes('✅')) {
-      setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
-
-      // If Check Out, remove from checked-in list
-      if (type === 'Check Out') {
-        setCheckedInTrucks(prev => prev.filter(t => getTruckNo(t) !== truckNo));
-      } else {
-        setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
+      // If there is a pending priority and it can't proceed, show an error
+      if (hasPending && !canProceed) {
+        return toast.error(`🚫 Priority ${nextPriority} at ${nextPlant} must be completed first.`);
       }
-
-      toast.success(response.data.message);
-
-      // Reset form after success
-      setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
-      setQuantityPanels([]);
-    } else {
-      toast.error(response.data.message || 'Failed to update status');
+    } catch (error) {
+      console.error('Priority check error:', error);
+      toast.error('❌ Error checking priority status');
+      return;
     }
-  } catch (err) {
-    console.error('Error:', err);
-    toast.error(err.response?.data?.message || 'Something went wrong.');
-  }
-};
 
+    // 2. Handle Check In
+    if (type === 'Check In' && checkedInTrucks.some(t => t.TruckNo === truckNo)) {
+      return toast.error('🚫 This truck is already checked in!');
+    }
 
+    // 3. Handle Check Out
+    if (type === 'Check Out' && !checkedInTrucks.some(t => t.TruckNo === truckNo)) {
+      return toast.warn('🚛 Please check in the truck first before checking out.');
+    }
+
+    try {
+      // 4. Send request to update truck status (either Check In or Check Out)
+      const response = await axios.post(`${API_URL}/api/update-truck-status`, {
+        truckNo,
+        plantName: selectedPlant,
+        type,
+        dispatchDate,
+        invoicenumber: type === 'Check Out' ? invoiceNo : '',  // Include invoiceNo only for Check Out
+        quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
+      });
+
+      // 5. Handle successful response
+      if (response.data.message?.includes('✅')) {
+        setTruckNumbers(prev => prev.filter(t => t.TruckNo !== truckNo));
+
+        // If Check Out, remove from checked-in list
+        if (type === 'Check Out') {
+          setCheckedInTrucks(prev => prev.filter(t => t.TruckNo !== truckNo));
+        } else {
+          setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo, invoiceNo }]);
+        }
+
+        toast.success(response.data.message);
+
+        // Reset form after success
+        setFormData(prev => ({ ...prev, truckNo: '', invoiceNo: '' }));
+        setQuantityPanels([]);
+      } else {
+        toast.error(response.data.message || 'Failed to update status');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      toast.error(err.response?.data?.message || 'Something went wrong.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 p-6">
       <CancelButton />
       <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-        
         {/* Left Panel */}
         <div className="space-y-4">
           <select value={selectedPlant} onChange={handlePlantChange} className="w-full border rounded px-4 py-2">
             <option value="">Select Plant</option>
             {plantList.map((plant, i) => (
-              <option key={i} value={getPlantName(plant)}>{getPlantName(plant)}</option>
+              <option key={i} value={plant.PlantName}>{plant.PlantName}</option>
             ))}
           </select>
-
+          {/* Truck List */}
           <div className="bg-blue-100 rounded p-4 h-64 overflow-y-auto">
             <h3 className="font-bold text-blue-700">Truck List</h3>
             {truckNumbers.length === 0 && <p className="text-gray-400 italic">No trucks available</p>}
             <ul>
               {truckNumbers.map((t, i) => (
-                <li key={i} onClick={() => handleTruckSelect(getTruckNo(t))} className="cursor-pointer hover:text-blue-600">
-                  🚛 {getTruckNo(t)}
+                <li key={i} onClick={() => handleTruckSelect(t.TruckNo)} className="cursor-pointer hover:text-blue-600">
+                  🚛 {t.TruckNo}
                 </li>
               ))}
             </ul>
@@ -9712,26 +9999,6 @@ const handleSubmit = async (type) => {
         {/* Center Panel */}
         <div className="space-y-4">
           <div className="relative h-56 w-full bg-blue-200 rounded-lg overflow-hidden shadow-md">
-            <div className="absolute bottom-[51px] left-[50px] h-[75px] w-[calc(100%-170px)] max-w-[370px] flex items-end gap-[2px] z-10">
-              {quantityPanels.map((panel, index) => {
-                const height = Math.max(...quantityPanels.map(p => p.quantity || 0), 0) ? (panel.quantity / Math.max(...quantityPanels.map(p => p.quantity || 0))) * 100 : 0;
-                const bgColors = ['bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500'];
-                return (
-                  <div
-                    key={index}
-                    className={`flex flex-col items-center justify-end text-white text-[10px] ${bgColors[index % bgColors.length]} rounded-t-md transition-transform transform hover:scale-105 hover:shadow-lg cursor-pointer`}
-                    style={{ height: `${height}%`, width: `${100 / quantityPanels.length}%` }}
-                    title={`${panel.plantname}: ${panel.quantity}`}
-                  >
-                    <div className="flex items-center gap-[2px]">
-                      <span>📦</span>
-                      <span>{panel.quantity}</span>
-                    </div>
-                    <div className="whitespace-nowrap text-[8px]">{panel.plantname}</div>
-                  </div>
-                );
-              })}
-            </div>
             <img src={truckImage} alt="Truck" className="absolute bottom-0 left-0 w-full h-auto object-contain z-0" style={{ height: '65%' }} />
           </div>
 
@@ -9742,9 +10009,8 @@ const handleSubmit = async (type) => {
 
           <input name="truckNo" value={formData.truckNo} onChange={handleChange} placeholder="Truck No" className="w-full border px-4 py-2 rounded" />
           <input name="dispatchDate" type="date" value={formData.dispatchDate} onChange={handleChange} className="w-full border px-4 py-2 rounded" />
-
-          {/* Invoice Number (conditionally displayed for Checkout) */}
-          {checkedInTrucks.some(t => getTruckNo(t) === formData.truckNo) && (
+          {/* Invoice Number field */}
+          {checkedInTrucks.some(t => t.TruckNo === formData.truckNo) && (
             <input 
               name="invoiceNo" 
               value={formData.invoiceNo} 
@@ -9768,8 +10034,8 @@ const handleSubmit = async (type) => {
           {checkedInTrucks.length === 0 && <p className="text-gray-400 italic">No checked-in trucks</p>}
           <ul>
             {checkedInTrucks.map((t, i) => (
-              <li key={i} onClick={() => handleCheckedInClick(getTruckNo(t))} className="cursor-pointer hover:text-green-600">
-                ✓ {getTruckNo(t)}
+              <li key={i} onClick={() => handleCheckedInClick(t.TruckNo)} className="cursor-pointer hover:text-green-600">
+                ✓ {t.TruckNo}
               </li>
             ))}
           </ul>
@@ -9781,4 +10047,3 @@ const handleSubmit = async (type) => {
 }
 
 export default GateKeeper;
-
