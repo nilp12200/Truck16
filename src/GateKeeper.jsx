@@ -9584,7 +9584,7 @@ const handleSubmit = async (type) => {
       plantName: selectedPlant,
       type,
       dispatchDate,
-      invoiceNo,  // Send the invoice number for Check Out
+      invoiceNo,  // Ensure invoiceNo is sent when Check Out is clicked
       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
     });
 
@@ -9607,6 +9607,7 @@ const handleSubmit = async (type) => {
     toast.error(err.response?.data?.message || 'Something went wrong.');
   }
 };
+
 
 
   return (
