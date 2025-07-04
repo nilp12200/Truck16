@@ -9651,7 +9651,7 @@ const handleSubmit = async (type) => {
       plantName: selectedPlant,
       type,
       dispatchDate,
-      invoiceNo: type === 'Check Out' ? invoiceNo : '',  // Include invoiceNo only for Check Out
+      invoicenumber: type === 'Check Out' ? invoicenumber : '',  // Include invoiceNo only for Check Out
       quantity: quantityPanels.reduce((acc, p) => acc + (p.quantity || 0), 0),
     });
 
