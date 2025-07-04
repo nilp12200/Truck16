@@ -1231,13 +1231,6 @@ export default function Report() {
     setPlant([]);
   };
 
-  // Format the time to IST
-  const formatToIST = (date) => {
-    if (!date) return '—';
-    const localDate = new Date(date);
-    return localDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="bg-white shadow-2xl rounded-3xl p-8 w-full max-w-7xl">
@@ -1351,8 +1344,8 @@ export default function Report() {
                       {item.transactionDate ? new Date(item.transactionDate).toLocaleDateString() : '—'}
                     </td>
                     <td className="px-4 py-3">{item.plantName || '—'}</td>
-                    <td className="px-4 py-3">{formatToIST(item.checkInTime)}</td>
-                    <td className="px-4 py-3">{formatToIST(item.checkOutTime)}</td>
+                    <td className="px-4 py-3">{item.checkInTime || '—'}</td>
+                    <td className="px-4 py-3">{item.checkOutTime || '—'}</td>
                     <td className="px-4 py-3">{item.loadingSlipNo || '—'}</td>
                     <td className="px-4 py-3">{item.qty ?? '—'}</td>
                     <td className="px-4 py-3">{item.freight ?? '—'}</td>
