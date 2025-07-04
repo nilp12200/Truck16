@@ -9608,7 +9608,7 @@ function GateKeeper() {
 //   }
 // };
 const handleSubmit = async (type) => {
-  const { truckNo, dispatchDate, invoiceNo } = formData;
+  const { truckNo, dispatchDate, invoicenumber } = formData;
 
   // Validate required fields
   if (!selectedPlant) return toast.warn('Please select a plant first.');
