@@ -1749,52 +1749,103 @@ export default function TruckTransaction() {
     return true;
   };
 
-  const handleSubmit = async () => {
-    setMessage('');
-    if (!validateForm()) return;
+  // const handleSubmit = async () => {
+  //   setMessage('');
+  //   if (!validateForm()) return;
 
-    let dataToSubmit = [...tableData];
-    const isNewRowFilled = newRow.plantName || newRow.loadingSlipNo || newRow.qty || newRow.priority || newRow.remarks;
-    if (isNewRowFilled) {
-      if (!newRow.plantName || !newRow.loadingSlipNo || !newRow.qty || !newRow.priority) {
-        setMessage("❌ Please fill all required fields in the new row before submitting.");
-        return;
-      }
-      const selectedPlants = tableData.map(r => r.plantName);
-      if (selectedPlants.includes(newRow.plantName)) {
-        setMessage(`❌ Plant ${newRow.plantName} is already selected.`);
-        return;
-      }
-      const existingPriorities = tableData.map(r => r.priority);
-      if (existingPriorities.includes(newRow.priority)) {
-        setMessage(`❌ Priority ${newRow.priority} already exists. Please choose a different priority.`);
-        return;
-      }
-      dataToSubmit.push({ ...newRow, detailId: null });
-    }
+  //   let dataToSubmit = [...tableData];
+  //   const isNewRowFilled = newRow.plantName || newRow.loadingSlipNo || newRow.qty || newRow.priority || newRow.remarks;
+  //   if (isNewRowFilled) {
+  //     if (!newRow.plantName || !newRow.loadingSlipNo || !newRow.qty || !newRow.priority) {
+  //       setMessage("❌ Please fill all required fields in the new row before submitting.");
+  //       return;
+  //     }
+  //     const selectedPlants = tableData.map(r => r.plantName);
+  //     if (selectedPlants.includes(newRow.plantName)) {
+  //       setMessage(`❌ Plant ${newRow.plantName} is already selected.`);
+  //       return;
+  //     }
+  //     const existingPriorities = tableData.map(r => r.priority);
+  //     if (existingPriorities.includes(newRow.priority)) {
+  //       setMessage(`❌ Priority ${newRow.priority} already exists. Please choose a different priority.`);
+  //       return;
+  //     }
+  //     dataToSubmit.push({ ...newRow, detailId: null });
+  //   }
 
-    try {
-      const response = await axios.post(`${API_URL}/api/truck-transaction`, { formData, tableData: dataToSubmit });
-      if (response.data.success) {
-        setMessage('✅ Transaction saved successfully!');
-        setFormData({
-          transactionId: null, truckNo: '', transactionDate: '', cityName: '',
-          transporter: '', truckWeight: '', deliverPoint: '', remarks: ''
-        });
-        setTableData([]);
-        setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
-      } else {
-        setMessage('❌ Error saving transaction.');
-      }
-    } catch (error) {
-      if (error.response?.status === 409) {
-        setMessage('🚫 Truck is already in transport. Please complete Check-Out first.');
-      } else {
-        console.error('Submit error:', error);
-        setMessage('❌ Server error while submitting data.');
-      }
+  //   try {
+  //     const response = await axios.post(`${API_URL}/api/truck-transaction`, { formData, tableData: dataToSubmit });
+  //     if (response.data.success) {
+  //       setMessage('✅ Transaction saved successfully!');
+  //       setFormData({
+  //         transactionId: null, truckNo: '', transactionDate: '', cityName: '',
+  //         transporter: '', truckWeight: '', deliverPoint: '', remarks: ''
+  //       });
+  //       setTableData([]);
+  //       setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
+  //     } else {
+  //       setMessage('❌ Error saving transaction.');
+  //     }
+  //   } catch (error) {
+  //     if (error.response?.status === 409) {
+  //       setMessage('🚫 Truck is already in transport. Please complete Check-Out first.');
+  //     } else {
+  //       console.error('Submit error:', error);
+  //       setMessage('❌ Server error while submitting data.');
+  //     }
+  //   }
+  // };
+
+
+
+        const handleSubmit = async () => {
+  setMessage('');
+  if (!validateForm()) return;
+
+  let dataToSubmit = [...tableData];
+  const isNewRowFilled = newRow.plantName || newRow.loadingSlipNo || newRow.qty || newRow.priority || newRow.remarks;
+  if (isNewRowFilled) {
+    if (!newRow.plantName || !newRow.loadingSlipNo || !newRow.qty || !newRow.priority) {
+      setMessage("❌ Please fill all required fields in the new row before submitting.");
+      return;
     }
-  };
+    const selectedPlants = tableData.map(r => r.plantName);
+    if (selectedPlants.includes(newRow.plantName)) {
+      setMessage(`❌ Plant ${newRow.plantName} is already selected.`);
+      return;
+    }
+    const existingPriorities = tableData.map(r => r.priority);
+    if (existingPriorities.includes(newRow.priority)) {
+      setMessage(`❌ Priority ${newRow.priority} already exists. Please choose a different priority.`);
+      return;
+    }
+    dataToSubmit.push({ ...newRow, detailId: null });
+  }
+
+  try {
+    const response = await axios.post(`${API_URL}/api/truck-transaction`, { formData, tableData: dataToSubmit });
+    if (response.data.success) {
+      setMessage('✅ Transaction saved successfully!');
+      setFormData({
+        transactionId: null, truckNo: '', transactionDate: '', cityName: '',
+        transporter: '', truckWeight: '', deliverPoint: '', remarks: ''
+      });
+      setTableData([]);
+      setNewRow({ detailId: null, plantName: '', loadingSlipNo: '', qty: '', priority: '', remarks: '', freight: 'To Pay' });
+    } else {
+      setMessage('❌ Error saving transaction.');
+    }
+  } catch (error) {
+    if (error.response) {
+      console.error('Server response error:', error.response.data);
+      setMessage(`❌ ${error.response.data.message || 'Server error while submitting data.'}`);
+    } else {
+      console.error('Error:', error);
+      setMessage('❌ Server error while submitting data.');
+    }
+  }
+};
+
 
   const selectedPlants = tableData.map((r, idx) => idx === editingIndex ? null : r.plantName);
 
