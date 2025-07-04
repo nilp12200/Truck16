@@ -1797,12 +1797,25 @@ export default function TruckTransaction() {
   // };
 
 
-
-        const handleSubmit = async () => {
+const handleSubmit = async () => {
   setMessage('');
   if (!validateForm()) return;
 
-  let dataToSubmit = [...tableData];
+  // Ensure numeric fields are converted to null or 0 if empty
+  const sanitizedFormData = {
+    ...formData,
+    amountPerTon: formData.amountPerTon === "" ? null : formData.amountPerTon,
+    truckWeight: formData.truckWeight === "" ? null : formData.truckWeight
+  };
+
+  // Ensure table rows' numeric fields are sanitized
+  const sanitizedTableData = tableData.map(row => ({
+    ...row,
+    qty: row.qty === "" ? null : row.qty,
+    priority: row.priority === "" ? null : row.priority
+  }));
+
+  let dataToSubmit = [...sanitizedTableData];
   const isNewRowFilled = newRow.plantName || newRow.loadingSlipNo || newRow.qty || newRow.priority || newRow.remarks;
   if (isNewRowFilled) {
     if (!newRow.plantName || !newRow.loadingSlipNo || !newRow.qty || !newRow.priority) {
@@ -1823,7 +1836,7 @@ export default function TruckTransaction() {
   }
 
   try {
-    const response = await axios.post(`${API_URL}/api/truck-transaction`, { formData, tableData: dataToSubmit });
+    const response = await axios.post(`${API_URL}/api/truck-transaction`, { formData: sanitizedFormData, tableData: dataToSubmit });
     if (response.data.success) {
       setMessage('✅ Transaction saved successfully!');
       setFormData({
