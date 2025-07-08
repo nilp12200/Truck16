@@ -1739,13 +1739,37 @@
 // }
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import CancelButton from './CancelButton';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+import { FiUser, FiLock, FiPhone, FiX, FiCheck, FiChevronRight } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function UserMaster() {
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("UserMaster Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 text-red-500">
+          Something went wrong. Please try again.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function UserMaster({ onClose }) {
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -1753,66 +1777,92 @@ export default function UserMaster() {
     moduleRights: [],
     allowedPlants: [],
   });
-
   const [plantList, setPlantList] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const loggedInUsername = localStorage.getItem('username');
+  const loggedInRole = localStorage.getItem('userRole');
+
+  // useEffect(() => {
+  //   setMounted(true);
+    
+  //   if (!['Admin', 'Owner'].some(role => loggedInRole?.includes(role))) {
+  //     toast.error('You are not authorized to create users');
+  //     handleClose();
+  //     return;
+  //   }
+    
+  //   fetchPlants();
+    
+  //   return () => setMounted(false);
+  // }, [loggedInRole]);
+
 
   useEffect(() => {
-    fetchPlants();
-  }, []);
+  setMounted(true);
+
+  const roles = (loggedInRole || '').split(',').map(r => r.trim().toLowerCase());
+  if (!roles.includes('admin') && !roles.includes('owner') && !roles.includes('usermaster')) {
+    toast.error('You are not authorized to create users');
+    handleClose();
+    return;
+  }
+
+  fetchPlants();
+
+  return () => setMounted(false);
+}, [loggedInRole]);
+
 
   const fetchPlants = async () => {
+    console.log('Fetching plants...');
     try {
       const res = await axios.get(`${API_URL}/api/plants`);
+      console.log('Plants data:', res.data);
       setPlantList(res.data);
     } catch (err) {
-      console.error('❌ Error fetching plants:', err);
-      toast.error('Failed to load plants.');
+      console.error('Error fetching plants:', err);
+      toast.error('Failed to load plant list');
     }
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-    if (type === 'checkbox' && name === 'moduleRights') {
-      setFormData((prev) => ({
-        ...prev,
-        moduleRights: checked
-          ? [...new Set([...prev.moduleRights, value])]
-          : prev.moduleRights.filter((right) => right !== value),
-      }));
-    } else if (type === 'checkbox' && name === 'allowedPlants') {
-      setFormData((prev) => ({
-        ...prev,
-        allowedPlants: checked
-          ? [...new Set([...prev.allowedPlants, value])]
-          : prev.allowedPlants.filter((plant) => plant !== value),
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' 
+        ? checked
+          ? [...prev[name], value]
+          : prev[name].filter(item => item !== value)
+        : value
+    }));
   };
 
-  const getPlantId = (plant) => String(plant.plantId ?? plant.plantid);
-  const getPlantName = (plant) => plant.plantName ?? plant.plantname;
-
   const handleSelectAllPlants = () => {
-    const allPlantIds = plantList.map(getPlantId);
-    const isAllSelected = allPlantIds.every((id) => formData.allowedPlants.includes(id));
-
-    setFormData((prev) => ({
+    const allPlantIds = plantList.map(plant => String(plant.plantId || plant.plantid));
+    setFormData(prev => ({
       ...prev,
-      allowedPlants: isAllSelected ? [] : allPlantIds,
+      allowedPlants: prev.allowedPlants.length === allPlantIds.length ? [] : allPlantIds
     }));
+  };
+
+  const handleClose = () => {
+    onClose?.();
+    navigate('/dashboard');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setIsLoading(true);
 
     try {
-      await axios.post(`${API_URL}/api/users`, formData);
-      toast.success('✅ User created successfully!');
+      await axios.post(`${API_URL}/api/users`, {
+        ...formData,
+        createdBy: loggedInUsername
+      });
+      
+      toast.success('User created successfully!');
       setFormData({
         username: '',
         password: '',
@@ -1821,126 +1871,183 @@ export default function UserMaster() {
         allowedPlants: [],
       });
     } catch (err) {
-      console.error('❌ Error creating user:', err);
-      toast.error('Failed to create user.');
+      console.error('Error creating user:', err);
+      toast.error(err.response?.data?.message || 'Failed to create user');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
+  if (!mounted) return null;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-blue-50 p-4">
-      <div className="relative bg-white p-8 rounded-3xl shadow-2xl w-full max-w-2xl border border-indigo-200">
-        <CancelButton />
-        <h2 className="text-4xl font-bold text-center mb-8 text-indigo-700 flex items-center justify-center gap-2">
-          <span className="text-5xl">👤</span> User Master
-        </h2>
+    <ErrorBoundary>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4 md:p-8">
+        <div className="relative bg-white p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-2xl border border-indigo-100">
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-indigo-50 text-gray-500 hover:text-indigo-600 transition-colors"
+            aria-label="Close"
+          >
+            <FiX className="w-5 h-5" />
+          </button>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-700">Username</label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              className="w-full border border-indigo-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              placeholder="Enter Username"
-            />
+          <div className="flex flex-col items-center mb-8">
+            <div className="bg-indigo-100 p-3 rounded-full mb-4">
+              <FiUser className="w-8 h-8 text-indigo-600" />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800">
+              User Master Registration
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Logged in as: <span className="font-medium text-indigo-700">
+                {loggedInUsername} ({loggedInRole})
+              </span>
+            </p>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-700">Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              minLength={6}
-              className="w-full border border-indigo-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              placeholder="Enter Password"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-700">Contact Number</label>
-            <input
-              type="text"
-              name="contactNumber"
-              value={formData.contactNumber}
-              onChange={handleChange}
-              pattern="[0-9]{10}"
-              title="Enter a 10-digit phone number"
-              className="w-full border border-indigo-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              placeholder="Enter Contact Number"
-            />
-          </div>
-
-          <div>
-            <label className="font-semibold text-slate-700 block mb-2">Module Rights</label>
-            <div className="flex flex-wrap gap-3">
-              {['Admin', 'GateKeeper', 'Report', 'Dispatch', 'Loader', 'UserMaster', 'UserRegister'].map((right) => (
-                <label key={right} className="flex items-center gap-2 text-sm bg-indigo-50 px-3 py-1 rounded-full shadow">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-1">
+                <label className="font-medium text-gray-700 text-sm">Username</label>
+                <div className="relative">
+                  <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
-                    type="checkbox"
-                    name="moduleRights"
-                    value={right}
-                    checked={formData.moduleRights.includes(right)}
+                    type="text"
+                    name="username"
+                    value={formData.username}
                     onChange={handleChange}
-                    className="accent-indigo-600"
+                    required
+                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="Enter username"
                   />
-                  {right}
-                </label>
-              ))}
-            </div>
-          </div>
+                </div>
+              </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="font-semibold text-slate-700">Allowed Plants</label>
-              <button
-                type="button"
-                onClick={handleSelectAllPlants}
-                className="text-indigo-600 text-sm font-medium hover:underline"
-              >
-                {formData.allowedPlants.length === plantList.length ? 'Deselect All' : 'Select All'}
-              </button>
+              <div className="flex flex-col gap-1">
+                <label className="font-medium text-gray-700 text-sm">Password</label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="Enter password"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-medium text-gray-700 text-sm">Contact Number</label>
+                <div className="relative">
+                  <FiPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="tel"
+                    name="contactNumber"
+                    value={formData.contactNumber}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="Enter contact number"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto border border-indigo-200 p-3 rounded-xl bg-indigo-50">
-              {plantList.map((plant) => {
-                const plantId = getPlantId(plant);
-                const plantName = getPlantName(plant);
-                return (
-                  <label key={plantId} className="flex items-center gap-2 text-sm">
+
+            <div>
+              <label className="font-medium text-gray-700 text-sm block mb-2">Module Rights</label>
+              <div className="flex flex-wrap gap-2">
+                {['Admin', 'PlantMaster', 'GateKeeper', 'Report', 'Dispatch', 'Loader', 'UserMaster', 'UserRegister'].map((right) => (
+                  <label 
+                    key={right} 
+                    className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
+                      formData.moduleRights.includes(right)
+                        ? 'bg-indigo-600 text-white shadow-md' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
                     <input
                       type="checkbox"
-                      name="allowedPlants"
-                      value={plantId}
-                      checked={formData.allowedPlants.includes(plantId)}
+                      name="moduleRights"
+                      value={right}
+                      checked={formData.moduleRights.includes(right)}
                       onChange={handleChange}
-                      className="accent-green-600"
+                      className="hidden"
                     />
-                    {plantName}
+                    {formData.moduleRights.includes(right) ? <FiCheck className="w-4 h-4" /> : <FiChevronRight className="w-4 h-4" />}
+                    {right}
                   </label>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`w-full text-white font-semibold py-3 rounded-xl shadow-lg transition-transform transform hover:scale-105 ${
-              isSubmitting ? 'bg-indigo-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
-            }`}
-          >
-            {isSubmitting ? 'Creating...' : 'Create User'}
-          </button>
-        </form>
-        <ToastContainer position="top-center" />
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+              <div className="flex justify-between items-center mb-3">
+                <label className="font-medium text-gray-700 text-sm">Allowed Plants</label>
+                <button
+                  type="button"
+                  onClick={handleSelectAllPlants}
+                  className="text-indigo-600 text-xs font-medium hover:underline flex items-center gap-1"
+                >
+                  {formData.allowedPlants.length === plantList.length ? (
+                    <>
+                      <FiX className="w-3 h-3" /> Deselect All
+                    </>
+                  ) : (
+                    <>
+                      <FiCheck className="w-3 h-3" /> Select All
+                    </>
+                  )}
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2">
+                {plantList.map((plant) => {
+                  const plantId = String(plant.plantId || plant.plantid);
+                  return (
+                    <label 
+                      key={plantId} 
+                      className={`flex items-center gap-2 text-sm p-2 rounded-lg cursor-pointer transition-colors ${
+                        formData.allowedPlants.includes(plantId)
+                          ? 'bg-indigo-50 border border-indigo-200'
+                          : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 border rounded-sm flex items-center justify-center ${
+                        formData.allowedPlants.includes(plantId)
+                          ? 'bg-indigo-600 border-indigo-600 text-white'
+                          : 'border-gray-300'
+                      }`}>
+                        {formData.allowedPlants.includes(plantId) && <FiCheck className="w-3 h-3" />}
+                      </div>
+                      <input
+                        type="checkbox"
+                        name="allowedPlants"
+                        value={plantId}
+                        checked={formData.allowedPlants.includes(plantId)}
+                        onChange={handleChange}
+                        className="hidden"
+                      />
+                      {plant.plantName || plant.plantname}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full rounded-lg bg-indigo-600 px-4 py-3 text-white font-medium shadow-md transition-all ${
+                isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-indigo-700 hover:shadow-lg'
+              }`}
+            >
+              {isLoading ? 'Creating User...' : 'Create User'}
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
